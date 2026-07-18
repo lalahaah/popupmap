@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>팝업맵 — 지금 열려있는 팝업만</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#16171B;
+    --paper:#FAFAF7;
+    --card:#FFFFFF;
+    --red:#FF3D57;
+    --yellow:#FFC700;
+    --blue:#4C6FFF;
+    --line:#16171B;
+  }
+  *{box-sizing:border-box;}
+  body{
+    font-family:'Noto Sans KR', sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+  }
+  .display{font-family:'Archivo Black', sans-serif;}
+  .mono{font-family:'IBM Plex Mono', monospace;}
+
+  .stub{
+    position:relative;
+    background:var(--ink);
+    color:var(--paper);
+  }
+  .stub::after{
+    content:"";
+    position:absolute;
+    top:50%;
+    right:-6px;
+    transform:translateY(-50%);
+    width:12px;height:12px;
+    background:var(--paper);
+    border-radius:50%;
+  }
+  .card-border{
+    border:2px solid var(--ink);
+    box-shadow:4px 4px 0 var(--ink);
+  }
+  .card-border:hover{
+    box-shadow:6px 6px 0 var(--ink);
+    transform:translate(-2px,-2px);
+  }
+  .chip{
+    border:2px solid var(--ink);
+    font-weight:700;
+  }
+  .chip.active{
+    background:var(--ink);
+    color:var(--paper);
+  }
+  .scrollbar-hide::-webkit-scrollbar{display:none;}
+  .scrollbar-hide{-ms-overflow-style:none; scrollbar-width:none;}
+
+  /* stylized map placeholder */
+  .map-bg{
+    background-color:#EFEDE4;
+    background-image:
+      linear-gradient(#d8d5c9 1px, transparent 1px),
+      linear-gradient(90deg, #d8d5c9 1px, transparent 1px);
+    background-size:44px 44px;
+  }
+  .pin{
+    filter:drop-shadow(2px 2px 0 rgba(22,23,27,0.9));
+  }
+
+  @media (max-width: 768px){
+    .desktop-sidebar{display:none;}
+    .mobile-sheet{display:flex;}
+  }
+  @media (min-width: 769px){
+    .mobile-sheet{display:none;}
+  }
+</style>
+</head>
+<body class="h-screen w-screen overflow-hidden">
+
+<div class="relative h-full w-full flex">
+
+  <!-- ===================== DESKTOP SIDEBAR ===================== -->
+  <aside class="desktop-sidebar w-[400px] h-full border-r-2 border-[var(--ink)] bg-[var(--paper)] flex flex-col z-20">
+
+    <!-- Header -->
+    <div class="p-5 border-b-2 border-[var(--ink)]">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="display text-2xl tracking-tight">POPUP MAP</h1>
+          <p class="text-xs font-bold mt-1 text-neutral-500">지금 진짜 열려있는 팝업만</p>
+        </div>
+        <div class="stub px-3 py-2 text-xs mono font-bold">D+0</div>
+      </div>
+
+      <!-- status banner -->
+      <div class="mt-4 border-2 border-[var(--ink)] bg-[var(--yellow)] px-4 py-3 flex items-center justify-between">
+        <div>
+          <p class="text-xs font-bold">오늘 새로 오픈</p>
+          <p class="display text-lg leading-none mt-1">4곳</p>
+        </div>
+        <div class="text-right">
+          <p class="text-xs font-bold">이번주 마감임박</p>
+          <p class="display text-lg leading-none mt-1 text-[var(--red)]">7곳</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="px-5 pt-4">
+      <div class="flex items-center gap-2 border-2 border-[var(--ink)] px-3 py-2.5">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="브랜드 또는 지역 검색" class="w-full bg-transparent outline-none text-sm font-medium placeholder:text-neutral-400">
+      </div>
+    </div>
+
+    <!-- Category chips -->
+    <div class="px-5 pt-3 flex gap-2 flex-wrap">
+      <button class="chip active px-3 py-1.5 text-xs">전체</button>
+      <button class="chip px-3 py-1.5 text-xs">패션</button>
+      <button class="chip px-3 py-1.5 text-xs">뷰티</button>
+      <button class="chip px-3 py-1.5 text-xs">F&B</button>
+      <button class="chip px-3 py-1.5 text-xs">굿즈</button>
+      <button class="chip px-3 py-1.5 text-xs">전시</button>
+    </div>
+
+    <!-- Sort tabs -->
+    <div class="px-5 pt-4 pb-2 flex items-center justify-between border-b-2 border-[var(--ink)]">
+      <div class="flex gap-4 text-sm font-bold">
+        <button class="pb-2 border-b-[3px] border-[var(--red)]">마감임박순</button>
+        <button class="pb-2 text-neutral-400">신규순</button>
+        <button class="pb-2 text-neutral-400">인기순</button>
+      </div>
+      <span class="text-xs mono font-bold text-neutral-500">지도 내 24곳</span>
+    </div>
+
+    <!-- List -->
+    <div class="flex-1 overflow-y-auto scrollbar-hide px-5 py-4 space-y-4">
+
+      <!-- Card 1 -->
+      <div class="card-border bg-[var(--card)] p-3 flex gap-3 cursor-pointer transition-all">
+        <div class="relative w-20 h-20 shrink-0 bg-neutral-200 border-2 border-[var(--ink)] overflow-hidden">
+          <div class="w-full h-full bg-gradient-to-br from-[var(--blue)] to-[var(--red)]"></div>
+          <div class="absolute -top-1 -left-1 stub px-1.5 py-0.5 text-[10px] mono">D-2</div>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-1.5">
+            <span class="text-[10px] font-bold px-1.5 py-0.5 border border-[var(--ink)] bg-[var(--yellow)]">뷰티</span>
+            <span class="text-[10px] font-bold text-[var(--red)]">마감임박</span>
+          </div>
+          <p class="font-bold text-sm mt-1 truncate">탬버린즈 성수 플래그십</p>
+          <p class="text-xs text-neutral-500 mt-0.5">성수동 · 800m</p>
+          <p class="text-[11px] mono font-medium text-neutral-400 mt-1">07.16 – 07.20</p>
+        </div>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="card-border bg-[var(--card)] p-3 flex gap-3 cursor-pointer transition-all">
+        <div class="relative w-20 h-20 shrink-0 bg-neutral-200 border-2 border-[var(--ink)] overflow-hidden">
+          <div class="w-full h-full bg-gradient-to-br from-[var(--yellow)] to-[var(--blue)]"></div>
+          <div class="absolute -top-1 -left-1 stub px-1.5 py-0.5 text-[10px] mono">NEW</div>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-1.5">
+            <span class="text-[10px] font-bold px-1.5 py-0.5 border border-[var(--ink)] bg-[var(--yellow)]">패션</span>
+          </div>
+          <p class="font-bold text-sm mt-1 truncate">무신사 스탠다드 한남</p>
+          <p class="text-xs text-neutral-500 mt-0.5">한남동 · 1.2km</p>
+          <p class="text-[11px] mono font-medium text-neutral-400 mt-1">07.18 – 08.03</p>
+        </div>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="card-border bg-[var(--card)] p-3 flex gap-3 cursor-pointer transition-all">
+        <div class="relative w-20 h-20 shrink-0 bg-neutral-200 border-2 border-[var(--ink)] overflow-hidden">
+          <div class="w-full h-full bg-gradient-to-br from-[var(--red)] to-[var(--yellow)]"></div>
+          <div class="absolute -top-1 -left-1 stub px-1.5 py-0.5 text-[10px] mono">D-5</div>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-1.5">
+            <span class="text-[10px] font-bold px-1.5 py-0.5 border border-[var(--ink)] bg-[var(--yellow)]">F&B</span>
+          </div>
+          <p class="font-bold text-sm mt-1 truncate">노티드 도넛 잠실팝업</p>
+          <p class="text-xs text-neutral-500 mt-0.5">잠실동 · 3.4km</p>
+          <p class="text-[11px] mono font-medium text-neutral-400 mt-1">07.14 – 07.23</p>
+        </div>
+      </div>
+
+      <!-- Card 4 -->
+      <div class="card-border bg-[var(--card)] p-3 flex gap-3 cursor-pointer transition-all">
+        <div class="relative w-20 h-20 shrink-0 bg-neutral-200 border-2 border-[var(--ink)] overflow-hidden">
+          <div class="w-full h-full bg-gradient-to-br from-[var(--blue)] to-[var(--ink)]"></div>
+          <div class="absolute -top-1 -left-1 stub px-1.5 py-0.5 text-[10px] mono">D-9</div>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-1.5">
+            <span class="text-[10px] font-bold px-1.5 py-0.5 border border-[var(--ink)] bg-[var(--yellow)]">굿즈</span>
+          </div>
+          <p class="font-bold text-sm mt-1 truncate">산리오 캐릭터즈 팝업</p>
+          <p class="text-xs text-neutral-500 mt-0.5">홍대입구 · 2.1km</p>
+          <p class="text-[11px] mono font-medium text-neutral-400 mt-1">07.10 – 07.27</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- CTA -->
+    <div class="p-5 border-t-2 border-[var(--ink)]">
+      <button class="w-full py-3 bg-[var(--red)] text-white font-bold border-2 border-[var(--ink)] shadow-[4px_4px_0_var(--ink)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0_var(--ink)] transition-all">
+        + 팝업 제보하기
+      </button>
+    </div>
+  </aside>
+
+  <!-- ===================== MAP AREA ===================== -->
+  <main class="flex-1 relative map-bg h-full">
+
+    <!-- top-right controls -->
+    <div class="absolute top-5 right-5 z-10 flex flex-col gap-2">
+      <button class="w-11 h-11 bg-[var(--card)] border-2 border-[var(--ink)] shadow-[3px_3px_0_var(--ink)] flex items-center justify-center">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+      </button>
+    </div>
+
+    <!-- pins scattered -->
+    <div class="pin absolute" style="top:22%; left:38%;">
+      <div class="stub px-2 py-1 text-[10px] mono">D-2</div>
+    </div>
+    <div class="pin absolute" style="top:38%; left:55%;">
+      <div class="bg-[var(--red)] text-white border-2 border-[var(--ink)] px-2 py-1 text-[10px] font-bold mono">NEW</div>
+    </div>
+    <div class="pin absolute" style="top:52%; left:32%;">
+      <div class="bg-[var(--card)] border-2 border-[var(--ink)] w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold">5</div>
+    </div>
+    <div class="pin absolute" style="top:65%; left:60%;">
+      <div class="stub px-2 py-1 text-[10px] mono">D-9</div>
+    </div>
+    <div class="pin absolute" style="top:44%; left:70%;">
+      <div class="bg-[var(--yellow)] border-2 border-[var(--ink)] w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold">3</div>
+    </div>
+    <div class="pin absolute" style="top:75%; left:44%;">
+      <div class="stub px-2 py-1 text-[10px] mono">D-5</div>
+    </div>
+
+    <div class="absolute bottom-5 left-1/2 -translate-x-1/2 bg-[var(--card)] border-2 border-[var(--ink)] px-4 py-2 text-xs font-bold shadow-[3px_3px_0_var(--ink)]">
+      지도를 움직이면 이 지역 팝업으로 다시 검색
+    </div>
+  </main>
+
+  <!-- ===================== MOBILE BOTTOM SHEET ===================== -->
+  <div class="mobile-sheet hidden flex-col fixed bottom-0 left-0 right-0 h-[70%] bg-[var(--paper)] border-t-2 border-[var(--ink)] z-30 rounded-t-2xl overflow-hidden">
+    <div class="flex justify-center pt-2 pb-1" id="sheetHandle">
+      <div class="w-10 h-1.5 bg-[var(--ink)] rounded-full"></div>
+    </div>
+    <div class="px-4 pb-2 flex items-center justify-between">
+      <h1 class="display text-lg">POPUP MAP</h1>
+      <div class="stub px-2 py-1 text-[10px] mono">오늘 4곳 NEW</div>
+    </div>
+    <div class="px-4 pb-2 flex gap-2 overflow-x-auto scrollbar-hide">
+      <button class="chip active px-3 py-1 text-[11px] shrink-0">전체</button>
+      <button class="chip px-3 py-1 text-[11px] shrink-0">패션</button>
+      <button class="chip px-3 py-1 text-[11px] shrink-0">뷰티</button>
+      <button class="chip px-3 py-1 text-[11px] shrink-0">F&B</button>
+      <button class="chip px-3 py-1 text-[11px] shrink-0">굿즈</button>
+    </div>
+    <div class="flex-1 overflow-y-auto scrollbar-hide px-4 py-2 space-y-3">
+      <div class="card-border bg-[var(--card)] p-2.5 flex gap-3">
+        <div class="relative w-16 h-16 shrink-0 border-2 border-[var(--ink)] bg-gradient-to-br from-[var(--blue)] to-[var(--red)]">
+          <div class="absolute -top-1 -left-1 stub px-1 py-0.5 text-[9px] mono">D-2</div>
+        </div>
+        <div class="min-w-0">
+          <p class="font-bold text-sm truncate">탬버린즈 성수 플래그십</p>
+          <p class="text-[11px] text-neutral-500">성수동 · 800m</p>
+          <p class="text-[10px] mono text-neutral-400 mt-0.5">07.16 – 07.20</p>
+        </div>
+      </div>
+      <div class="card-border bg-[var(--card)] p-2.5 flex gap-3">
+        <div class="relative w-16 h-16 shrink-0 border-2 border-[var(--ink)] bg-gradient-to-br from-[var(--yellow)] to-[var(--blue)]">
+          <div class="absolute -top-1 -left-1 stub px-1 py-0.5 text-[9px] mono">NEW</div>
+        </div>
+        <div class="min-w-0">
+          <p class="font-bold text-sm truncate">무신사 스탠다드 한남</p>
+          <p class="text-[11px] text-neutral-500">한남동 · 1.2km</p>
+          <p class="text-[10px] mono text-neutral-400 mt-0.5">07.18 – 08.03</p>
+        </div>
+      </div>
+      <div class="card-border bg-[var(--card)] p-2.5 flex gap-3">
+        <div class="relative w-16 h-16 shrink-0 border-2 border-[var(--ink)] bg-gradient-to-br from-[var(--red)] to-[var(--yellow)]">
+          <div class="absolute -top-1 -left-1 stub px-1 py-0.5 text-[9px] mono">D-5</div>
+        </div>
+        <div class="min-w-0">
+          <p class="font-bold text-sm truncate">노티드 도넛 잠실팝업</p>
+          <p class="text-[11px] text-neutral-500">잠실동 · 3.4km</p>
+          <p class="text-[10px] mono text-neutral-400 mt-0.5">07.14 – 07.23</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // chip toggle (desktop + mobile)
+  document.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      chip.parentElement.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+    });
+  });
+
+  // mobile sheet drag-to-expand/collapse (simple toggle)
+  const sheet = document.querySelector('.mobile-sheet');
+  const handle = document.getElementById('sheetHandle');
+  let expanded = true;
+  handle && handle.addEventListener('click', () => {
+    expanded = !expanded;
+    sheet.style.height = expanded ? '70%' : '18%';
+  });
+</script>
+
+</body>
+</html>

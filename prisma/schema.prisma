@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Popup {
+  id          String     @id @default(uuid())
+  name        String
+  brandId     String?
+  brand       Brand?     @relation(fields: [brandId], references: [id])
+  description String?
+  category    Category
+  address     String
+  lat         Float
+  lng         Float
+  startDate   DateTime
+  endDate     DateTime?
+  status      Status     @default(upcoming)
+  sourceType  SourceType
+  sourceUrl   String?
+  images      String[]
+  isSponsored Boolean    @default(false)
+  viewCount   Int        @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([lat, lng])
+  @@index([status])
+  @@index([category])
+}
+
+model Brand {
+  id              String   @id @default(uuid())
+  name            String
+  instagramHandle String?
+  contactEmail    String?
+  isPartner       Boolean  @default(false)
+  popups          Popup[]
+}
+
+model Submission {
+  id               String    @id @default(uuid())
+  popupData        Json
+  submitterContact String?
+  status           SubStatus @default(pending)
+  createdAt        DateTime  @default(now())
+}
+
+enum Category {
+  FASHION
+  BEAUTY
+  FOOD
+  GOODS
+  EXHIBIT
+  ETC
+}
+
+enum Status {
+  upcoming
+  ongoing
+  ended
+}
+
+enum SourceType {
+  manual
+  user_submit
+  brand_official
+}
+
+enum SubStatus {
+  pending
+  approved
+  rejected
+}
