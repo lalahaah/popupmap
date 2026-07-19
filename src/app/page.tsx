@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { MobileSheet } from "@/components/layout/MobileSheet";
 import { KakaoMap } from "@/components/map/KakaoMap";
 import { PopupDetail } from "@/components/detail/PopupDetail";
 import { Popup } from "@/types/popup";
@@ -38,6 +39,7 @@ export default function Home() {
   return (
     <div className="relative h-screen w-screen flex">
       <Sidebar popups={popups} category={category} onCategoryChange={setCategory} onSelectPopup={setSelectedPopup} />
+      <MobileSheet popups={popups} category={category} onCategoryChange={setCategory} onSelectPopup={setSelectedPopup} />
       {/* ===================== MAP AREA ===================== */}
       <main className="flex-1 relative h-full min-h-0 min-w-0">
         {/* top-right controls */}

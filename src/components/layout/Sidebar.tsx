@@ -35,7 +35,7 @@ export function Sidebar({ popups, category, onCategoryChange, onSelectPopup }: S
   }).length;
 
   return (
-    <aside className="desktop-sidebar w-[400px] h-full border-r-2 border-ink bg-paper flex flex-col z-20">
+    <aside className="hidden md:flex desktop-sidebar w-[400px] h-full border-r-2 border-ink bg-paper flex-col z-20">
       {/* Header */}
       <div className="p-5 border-b-2 border-ink">
         <div className="flex items-center justify-between">
