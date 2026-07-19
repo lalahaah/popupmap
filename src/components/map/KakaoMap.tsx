@@ -106,6 +106,6 @@ export function KakaoMap({ popups, onSelectPopup }: KakaoMapProps) {
   }, [map, popups, onSelectPopup]);
 
   return (
-    <div ref={mapRef} className="w-full h-full touch-none" style={{ width: '100%', height: '100%' }} />
+    <div ref={mapRef} className="w-full h-full" style={{ width: '100%', height: '100%' }} />
   );
 }
