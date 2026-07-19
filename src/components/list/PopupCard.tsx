@@ -6,6 +6,7 @@ interface Popup {
   category: string;
   lat: number;
   lng: number;
+  address?: string;
   startDate?: string | Date;
   endDate?: string | Date;
   status: string;
@@ -54,14 +55,14 @@ export function PopupCard({ popup }: { popup: Popup }) {
 
   // Category Colors matching wireframe
   const categoryColors: Record<string, string> = {
-    'FASHION': 'bg-[var(--yellow)]',
-    'BEAUTY': 'bg-[var(--yellow)]',
-    'FOOD': 'bg-[var(--yellow)]',
-    'GOODS': 'bg-[var(--yellow)]',
-    'EXHIBIT': 'bg-[var(--yellow)]',
-    'ETC': 'bg-[var(--yellow)]',
+    'FASHION': 'bg-brandYellow',
+    'BEAUTY': 'bg-brandYellow',
+    'FOOD': 'bg-brandYellow',
+    'GOODS': 'bg-brandYellow',
+    'EXHIBIT': 'bg-brandYellow',
+    'ETC': 'bg-brandYellow',
   };
-  const categoryBg = categoryColors[popup.category] || 'bg-[var(--paper)]';
+  const categoryBg = categoryColors[popup.category] || 'bg-paper';
 
   const categoryLabels: Record<string, string> = {
     'FASHION': '패션',
@@ -85,29 +86,29 @@ export function PopupCard({ popup }: { popup: Popup }) {
       : '상시운영';
 
   return (
-    <div className="card-border bg-[var(--card)] p-3 flex gap-3 cursor-pointer transition-all">
-      <div className="relative w-20 h-20 shrink-0 bg-neutral-200 border-2 border-[var(--ink)] overflow-hidden">
+    <div className="card-border bg-card p-3 flex gap-3 cursor-pointer transition-all border-2 border-ink shadow-[4px_4px_0_theme(colors.ink)] hover:shadow-[6px_6px_0_theme(colors.ink)] hover:-translate-x-[2px] hover:-translate-y-[2px]">
+      <div className="relative w-20 h-20 shrink-0 bg-neutral-200 border-2 border-ink overflow-hidden">
         {popup.images && popup.images.length > 0 ? (
           <img src={popup.images[0]} alt={popup.name} className="w-full h-full object-cover" />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-[var(--blue)] to-[var(--red)]"></div>
+          <div className="w-full h-full bg-gradient-to-br from-brandBlue to-brandRed"></div>
         )}
-        <div className={`absolute -top-1 -left-1 stub px-1.5 py-0.5 text-[10px] mono ${isNew ? 'bg-[var(--red)] !text-white' : ''}`}>
+        <div className={`absolute -top-1 -left-1 stub px-1.5 py-0.5 text-[10px] font-mono ${isNew ? 'bg-brandRed !text-white' : ''}`}>
           {dDayText}
         </div>
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
-          <span className={`text-[10px] font-bold px-1.5 py-0.5 border border-[var(--ink)] ${categoryBg}`}>
+          <span className={`text-[10px] font-bold px-1.5 py-0.5 border border-ink ${categoryBg}`}>
             {categoryLabels[popup.category] || '기타'}
           </span>
           {isClosingSoon && (
-            <span className="text-[10px] font-bold text-[var(--red)]">마감임박</span>
+            <span className="text-[10px] font-bold text-brandRed">마감임박</span>
           )}
         </div>
         <p className="font-bold text-sm mt-1 truncate">{popup.name}</p>
-        <p className="text-xs text-neutral-500 mt-0.5">서울 · 반경 이내</p>
-        <p className="text-[11px] mono font-medium text-neutral-400 mt-1">{dateRange}</p>
+        <p className="text-xs text-neutral-500 mt-0.5 truncate">{popup.address || '주소 정보 없음'}</p>
+        <p className="text-[11px] font-mono font-medium text-neutral-400 mt-1">{dateRange}</p>
       </div>
     </div>
   );

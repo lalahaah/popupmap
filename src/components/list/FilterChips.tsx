@@ -23,7 +23,7 @@ export function FilterChips({ selectedCategory, onFilterChange }: FilterChipsPro
         <button
           key={cat.label}
           onClick={() => onFilterChange(cat.value)}
-          className={`chip px-3 py-1.5 text-xs ${selectedCategory === cat.value ? 'active' : ''}`}
+          className={`chip px-3 py-1.5 text-xs font-bold border-2 border-ink ${selectedCategory === cat.value ? 'bg-ink text-paper' : 'bg-white text-ink'}`}
         >
           {cat.label}
         </button>
