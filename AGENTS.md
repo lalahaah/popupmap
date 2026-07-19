@@ -27,8 +27,8 @@
 
 - [x] STEP A — Next.js 뼈대, tailwind/tsconfig/next.config, globals.css(디자인 토큰), layout.tsx(폰트: Archivo Black/IBM Plex Mono/Noto Sans KR), page.tsx(플레이스홀더), lib/prisma.ts, .env.local.example
 - [x] STEP B — `prisma/schema.prisma` 작성 완료 (Popup/Brand/Submission 모델, 인덱스: lat/lng, status, category). **`DATABASE_URL`(pooler, 6543) + `DIRECT_URL`(direct, 5432) 분리 설정 — Vercel 서버리스 커넥션 고갈 방지, ViewPoint에서 겪은 이슈 선제 대응.** `prisma migrate dev`는 Supabase 프로젝트 생성 후 진행
-- [ ] STEP C — 관리자 인증(NextAuth v5, Credentials Provider, middleware 보호) + 시드 입력용 API(`POST /api/popups`, zod 검증)
-- [ ] STEP D — 시드 데이터 50~100개 수동 입력
+- [x] STEP C — 관리자 인증(NextAuth v5, Credentials Provider, middleware 보호) + 시드 입력용 API(`POST /api/popups`, zod 검증)
+- [x] STEP D — 시드 데이터 50~100개 수동 입력
 - [ ] STEP E — `GET /api/popups` 반경검색
 - [ ] STEP F — 프론트 컴포넌트 (Sidebar, PopupCard, FilterChips) — `wireframe_main.html` 그대로 이식
 - [ ] STEP G — KakaoMap 연동 + D-day 배지 핀

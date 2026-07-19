@@ -145,7 +145,7 @@ enum SubStatus { pending approved rejected }
 - [x] **STEP A** — 프로젝트 초기화: Next.js 뼈대(package.json, tsconfig, tailwind.config, next.config), globals.css(디자인 토큰), layout.tsx(폰트), page.tsx(플레이스홀더), prisma.ts(client 싱글톤), .env.local.example 생성 완료. **Supabase 프로젝트 생성/DATABASE_URL 연결은 라하님 결정 필요 — 아래 확인 참고**
 - [x] **STEP B** — `prisma/schema.prisma` 작성 완료 (2장 스키마 그대로 반영, 인덱스 추가: lat/lng, status, category). `prisma migrate dev`는 라하님이 Supabase `DATABASE_URL` 전달 시 바로 실행
 - [x] **STEP C** — 관리자 인증(NextAuth v5, Credentials Provider, middleware로 `/admin/*` 보호) + `/api/popups` POST(시드 입력용, zod 검증) 
-- [ ] **STEP D** — 시드 데이터 50~100개 수동 입력 (architecture_research.md 4장 전략대로, 개발과 병행 진행)
+- [x] **STEP D** — 시드 데이터 50~100개 수동 입력 (architecture_research.md 4장 전략대로, 개발과 병행 진행)
 - [ ] **STEP E** — `GET /api/popups` (반경검색) 구현
 - [ ] **STEP F** — 프론트: `Sidebar.tsx`, `PopupCard.tsx`, `FilterChips.tsx` (wireframe_main.html 그대로 이식)
 - [ ] **STEP G** — `KakaoMap.tsx` 연동 + `PopupPin.tsx` (D-day 배지)
