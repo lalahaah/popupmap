@@ -31,7 +31,12 @@
 - [x] STEP D — 시드 데이터 50~100개 수동 입력
 - [x] STEP E — GET /api/popups 반경검색 구현 완료 (Haversine, category/status 필터). curl로 실제 검증 완료 (5km 반경 8건, BEAUTY 필터 3건 정확히 반환)
 - [x] STEP F — Sidebar/PopupCard/FilterChips 구현 + 디자인 토큰(색상/폰트) 완전 적용 완료. 실제 API 데이터 8건 렌더링, 주소 필드 정상 표시, Archivo Black 폰트 및 브랜드 컬러(옐로/레드/블루) 육안+devtools 검증 완료.
-- [ ] STEP G — KakaoMap 연동 + D-day 배지 핀
+- [x] STEP G — 카카오맵 연동 완료. D-day 배지 마커 정상 표시, 리스트-지도 데이터 동기화 확인.
+      **디버깅 노트**: 지도가 안 보이던 근본 원인은 Kakao API/SDK 문제가 아니라, 
+      page.tsx 최상위 컨테이너가 퍼센트 기반(h-full)이라 body/html에 명시적 높이가 
+      없어 전체 높이 체인이 0으로 계산된 것. h-screen(뷰포트 고정)으로 교체 후 해결.
+      앞으로 전체 화면 레이아웃 컴포넌트는 h-full 대신 h-screen을 최상위에 
+      명시하는 걸 기본으로 할 것.
 - [ ] STEP H — 모바일 바텀시트
 - [ ] STEP I — 제보 폼 + API
 - [ ] STEP J — 관리자 승인 큐 페이지
