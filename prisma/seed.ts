@@ -216,9 +216,12 @@ async function geocode(address: string): Promise<{ lat: number; lng: number } | 
           lng: parseFloat(data.documents[0].x),
         };
       }
+    } else {
+      console.error(`주소 검색 API 에러: ${addrRes.status} ${addrRes.statusText}`);
+      console.error(await addrRes.text());
     }
-  } catch (error) {
-    // console.error(error);
+  } catch (error: any) {
+    console.error(`주소 검색 요청 실패: ${error?.message || error}`);
   }
 
   // 2. 키워드 검색
@@ -232,9 +235,12 @@ async function geocode(address: string): Promise<{ lat: number; lng: number } | 
           lng: parseFloat(data.documents[0].x),
         };
       }
+    } else {
+      console.error(`키워드 검색 API 에러: ${keywordRes.status} ${keywordRes.statusText}`);
+      console.error(await keywordRes.text());
     }
-  } catch (error) {
-    // console.error(error);
+  } catch (error: any) {
+    console.error(`키워드 검색 요청 실패: ${error?.message || error}`);
   }
 
   return null;
