@@ -1,48 +1,17 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { FilterChips } from '../list/FilterChips';
 import { PopupCard } from '../list/PopupCard';
+import { Popup } from '@/types/popup';
 
-interface Popup {
-  id: string;
-  name: string;
+interface SidebarProps {
+  popups: Popup[];
   category: string;
-  lat: number;
-  lng: number;
-  startDate?: string | Date;
-  endDate?: string | Date;
-  status: string;
-  images: string[];
+  onCategoryChange: (category: string) => void;
 }
 
-export function Sidebar() {
-  const [popups, setPopups] = useState<Popup[]>([]);
-  const [category, setCategory] = useState('');
-  
-  // 서울 중심 고정값
-  const lat = 37.544;
-  const lng = 127.055;
-  const radius = 5;
-
-  useEffect(() => {
-    async function fetchPopups() {
-      let url = `/api/popups?lat=${lat}&lng=${lng}&radius=${radius}`;
-      if (category) {
-        url += `&category=${category}`;
-      }
-      try {
-        const res = await fetch(url);
-        if (res.ok) {
-          const data = await res.json();
-          setPopups(data.popups || []);
-        }
-      } catch (err) {
-        console.error('Failed to fetch popups', err);
-      }
-    }
-    fetchPopups();
-  }, [category]);
+export function Sidebar({ popups, category, onCategoryChange }: SidebarProps) {
 
   const newCount = popups.filter(p => {
     if (!p.startDate) return false;
@@ -98,7 +67,7 @@ export function Sidebar() {
       </div>
 
       {/* Category chips */}
-      <FilterChips selectedCategory={category} onFilterChange={setCategory} />
+      <FilterChips selectedCategory={category} onFilterChange={onCategoryChange} />
 
       {/* Sort tabs */}
       <div className="px-5 pt-4 pb-2 flex items-center justify-between border-b-2 border-ink">

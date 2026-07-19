@@ -1,11 +1,43 @@
+'use client';
+
+import { useEffect, useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { KakaoMap } from "@/components/map/KakaoMap";
+import { Popup } from "@/types/popup";
 
 export default function Home() {
+  const [popups, setPopups] = useState<Popup[]>([]);
+  const [category, setCategory] = useState('');
+
+  // 서울 중심 고정값
+  const lat = 37.544;
+  const lng = 127.055;
+  const radius = 5;
+
+  useEffect(() => {
+    async function fetchPopups() {
+      let url = `/api/popups?lat=${lat}&lng=${lng}&radius=${radius}`;
+      if (category) {
+        url += `&category=${category}`;
+      }
+      try {
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          setPopups(data.popups || []);
+        }
+      } catch (err) {
+        console.error('Failed to fetch popups', err);
+      }
+    }
+    fetchPopups();
+  }, [category]);
+
   return (
     <div className="relative h-full w-full flex">
-      <Sidebar />
+      <Sidebar popups={popups} category={category} onCategoryChange={setCategory} />
       {/* ===================== MAP AREA ===================== */}
-      <main className="flex-1 relative map-bg h-full">
+      <main className="flex-1 relative h-full">
         {/* top-right controls */}
         <div className="absolute top-5 right-5 z-10 flex flex-col gap-2">
           <button className="w-11 h-11 bg-card border-2 border-ink shadow-[3px_3px_0_theme(colors.ink)] flex items-center justify-center">
@@ -13,27 +45,9 @@ export default function Home() {
           </button>
         </div>
 
-        {/* pins placeholder */}
-        <div className="pin absolute" style={{ top: '22%', left: '38%' }}>
-          <div className="stub px-2 py-1 text-[10px] font-mono">D-2</div>
-        </div>
-        <div className="pin absolute" style={{ top: '38%', left: '55%' }}>
-          <div className="bg-brandRed text-white border-2 border-ink px-2 py-1 text-[10px] font-bold font-mono">NEW</div>
-        </div>
-        <div className="pin absolute" style={{ top: '52%', left: '32%' }}>
-          <div className="bg-card border-2 border-ink w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold">5</div>
-        </div>
-        <div className="pin absolute" style={{ top: '65%', left: '60%' }}>
-          <div className="stub px-2 py-1 text-[10px] font-mono">D-9</div>
-        </div>
-        <div className="pin absolute" style={{ top: '44%', left: '70%' }}>
-          <div className="bg-brandYellow border-2 border-ink w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold">3</div>
-        </div>
-        <div className="pin absolute" style={{ top: '75%', left: '44%' }}>
-          <div className="stub px-2 py-1 text-[10px] font-mono">D-5</div>
-        </div>
+        <KakaoMap popups={popups} />
 
-        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 bg-card border-2 border-ink px-4 py-2 text-xs font-bold shadow-[3px_3px_0_theme(colors.ink)]">
+        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-10 bg-card border-2 border-ink px-4 py-2 text-xs font-bold shadow-[3px_3px_0_theme(colors.ink)]">
           지도를 움직이면 이 지역 팝업으로 다시 검색
         </div>
       </main>

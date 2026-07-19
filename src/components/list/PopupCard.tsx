@@ -1,17 +1,5 @@
 import React from 'react';
-
-interface Popup {
-  id: string;
-  name: string;
-  category: string;
-  lat: number;
-  lng: number;
-  address?: string;
-  startDate?: string | Date;
-  endDate?: string | Date;
-  status: string;
-  images: string[];
-}
+import { Popup } from '@/types/popup';
 
 export function PopupCard({ popup }: { popup: Popup }) {
   const today = new Date();
