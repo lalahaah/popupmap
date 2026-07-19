@@ -10,9 +10,10 @@ interface SidebarProps {
   category: string;
   onCategoryChange: (category: string) => void;
   onSelectPopup: (popup: Popup) => void;
+  onOpenSubmissionForm: () => void;
 }
 
-export function Sidebar({ popups, category, onCategoryChange, onSelectPopup }: SidebarProps) {
+export function Sidebar({ popups, category, onCategoryChange, onSelectPopup, onOpenSubmissionForm }: SidebarProps) {
 
   const newCount = popups.filter(p => {
     if (!p.startDate) return false;
@@ -89,7 +90,10 @@ export function Sidebar({ popups, category, onCategoryChange, onSelectPopup }: S
 
       {/* CTA */}
       <div className="p-5 border-t-2 border-ink">
-        <button className="w-full py-3 bg-brandRed text-white font-bold border-2 border-ink shadow-[4px_4px_0_theme(colors.ink)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0_theme(colors.ink)] transition-all">
+        <button 
+          onClick={onOpenSubmissionForm}
+          className="w-full py-3 bg-brandRed text-white font-bold border-2 border-ink shadow-[4px_4px_0_theme(colors.ink)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0_theme(colors.ink)] transition-all"
+        >
           + 팝업 제보하기
         </button>
       </div>

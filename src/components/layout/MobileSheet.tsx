@@ -9,6 +9,7 @@ interface MobileSheetProps {
   category: string;
   onCategoryChange: (category: string) => void;
   onSelectPopup: (popup: Popup) => void;
+  onOpenSubmissionForm: () => void;
 }
 
 const CATEGORIES = [
@@ -21,7 +22,7 @@ const CATEGORIES = [
   { label: '기타', value: 'ETC' },
 ];
 
-export function MobileSheet({ popups, category, onCategoryChange, onSelectPopup }: MobileSheetProps) {
+export function MobileSheet({ popups, category, onCategoryChange, onSelectPopup, onOpenSubmissionForm }: MobileSheetProps) {
   const [expanded, setExpanded] = useState(false);
   const [dragHeight, setDragHeight] = useState<number | null>(null);
   const startYRef = useRef<number>(0);
@@ -123,6 +124,14 @@ export function MobileSheet({ popups, category, onCategoryChange, onSelectPopup 
             주변에 열려있는 팝업이 없습니다.
           </div>
         )}
+
+        {/* CTA */}
+        <button 
+          onClick={onOpenSubmissionForm}
+          className="w-full mt-2 mb-4 py-3 bg-brandRed text-white font-bold border-2 border-ink shadow-[4px_4px_0_theme(colors.ink)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0_theme(colors.ink)] transition-all"
+        >
+          + 팝업 제보하기
+        </button>
       </div>
     </div>
   );

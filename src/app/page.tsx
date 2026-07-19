@@ -5,12 +5,14 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { MobileSheet } from "@/components/layout/MobileSheet";
 import { KakaoMap } from "@/components/map/KakaoMap";
 import { PopupDetail } from "@/components/detail/PopupDetail";
+import { SubmissionForm } from "@/components/forms/SubmissionForm";
 import { Popup } from "@/types/popup";
 
 export default function Home() {
   const [popups, setPopups] = useState<Popup[]>([]);
   const [category, setCategory] = useState('');
   const [selectedPopup, setSelectedPopup] = useState<Popup | null>(null);
+  const [showSubmissionForm, setShowSubmissionForm] = useState(false);
 
   // 서울 중심 고정값
   const lat = 37.544;
@@ -38,8 +40,14 @@ export default function Home() {
 
   return (
     <div className="relative h-screen w-screen flex">
-      <Sidebar popups={popups} category={category} onCategoryChange={setCategory} onSelectPopup={setSelectedPopup} />
-      <MobileSheet popups={popups} category={category} onCategoryChange={setCategory} onSelectPopup={setSelectedPopup} />
+      <Sidebar 
+        popups={popups} category={category} onCategoryChange={setCategory} onSelectPopup={setSelectedPopup} 
+        onOpenSubmissionForm={() => setShowSubmissionForm(true)}
+      />
+      <MobileSheet 
+        popups={popups} category={category} onCategoryChange={setCategory} onSelectPopup={setSelectedPopup} 
+        onOpenSubmissionForm={() => setShowSubmissionForm(true)}
+      />
       {/* ===================== MAP AREA ===================== */}
       <main className="flex-1 relative h-full min-h-0 min-w-0">
         {/* top-right controls */}
@@ -61,6 +69,10 @@ export default function Home() {
           popup={selectedPopup} 
           onClose={() => setSelectedPopup(null)} 
         />
+      )}
+
+      {showSubmissionForm && (
+        <SubmissionForm onClose={() => setShowSubmissionForm(false)} />
       )}
     </div>
   );
