@@ -4,16 +4,19 @@ import React from 'react';
 import { FilterChips } from '../list/FilterChips';
 import { PopupCard } from '../list/PopupCard';
 import { Popup } from '@/types/popup';
+import { SORT_TABS } from '@/lib/constants';
 
 interface SidebarProps {
   popups: Popup[];
   category: string;
   onCategoryChange: (category: string) => void;
+  sortBy: string;
+  onSortChange: (sort: string) => void;
   onSelectPopup: (popup: Popup) => void;
   onOpenSubmissionForm: () => void;
 }
 
-export function Sidebar({ popups, category, onCategoryChange, onSelectPopup, onOpenSubmissionForm }: SidebarProps) {
+export function Sidebar({ popups, category, onCategoryChange, sortBy, onSortChange, onSelectPopup, onOpenSubmissionForm }: SidebarProps) {
 
   const newCount = popups.filter(p => {
     if (!p.startDate) return false;
@@ -74,9 +77,15 @@ export function Sidebar({ popups, category, onCategoryChange, onSelectPopup, onO
       {/* Sort tabs */}
       <div className="px-5 pt-4 pb-2 flex items-center justify-between border-b-2 border-ink">
         <div className="flex gap-4 text-sm font-bold">
-          <button className="pb-2 border-b-[3px] border-brandRed">마감임박순</button>
-          <button className="pb-2 text-neutral-400">신규순</button>
-          <button className="pb-2 text-neutral-400">인기순</button>
+          {SORT_TABS.map(tab => (
+            <button
+              key={tab.value}
+              onClick={() => onSortChange(tab.value)}
+              className={`pb-2 ${sortBy === tab.value ? 'border-b-[3px] border-brandRed text-ink' : 'text-neutral-400'}`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
         <span className="text-xs font-mono font-bold text-neutral-500">지도 내 {popups.length}곳</span>
       </div>

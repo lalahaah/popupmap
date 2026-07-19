@@ -8,21 +8,15 @@ interface MobileSheetProps {
   popups: Popup[];
   category: string;
   onCategoryChange: (category: string) => void;
+  sortBy: string;
+  onSortChange: (sort: string) => void;
   onSelectPopup: (popup: Popup) => void;
   onOpenSubmissionForm: () => void;
 }
 
-const CATEGORIES = [
-  { label: '전체', value: '' },
-  { label: '패션', value: 'FASHION' },
-  { label: '뷰티', value: 'BEAUTY' },
-  { label: 'F&B', value: 'FOOD' },
-  { label: '굿즈', value: 'GOODS' },
-  { label: '전시', value: 'EXHIBIT' },
-  { label: '기타', value: 'ETC' },
-];
+import { CATEGORIES, SORT_TABS } from '@/lib/constants';
 
-export function MobileSheet({ popups, category, onCategoryChange, onSelectPopup, onOpenSubmissionForm }: MobileSheetProps) {
+export function MobileSheet({ popups, category, onCategoryChange, sortBy, onSortChange, onSelectPopup, onOpenSubmissionForm }: MobileSheetProps) {
   const [expanded, setExpanded] = useState(false);
   const [dragHeight, setDragHeight] = useState<number | null>(null);
   const startYRef = useRef<number>(0);
@@ -107,6 +101,18 @@ export function MobileSheet({ popups, category, onCategoryChange, onSelectPopup,
             className={`chip px-3 py-1 text-[11px] font-bold border-2 border-ink shrink-0 ${category === cat.value ? 'bg-ink text-paper' : 'bg-white text-ink'}`}
           >
             {cat.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="px-4 py-2 border-b-2 border-ink flex gap-4 text-xs font-bold shrink-0">
+        {SORT_TABS.map(tab => (
+          <button
+            key={tab.value}
+            onClick={() => onSortChange(tab.value)}
+            className={`${sortBy === tab.value ? 'text-brandRed underline decoration-2 underline-offset-4' : 'text-neutral-400'}`}
+          >
+            {tab.label}
           </button>
         ))}
       </div>

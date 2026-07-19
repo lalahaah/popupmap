@@ -104,6 +104,7 @@ export async function GET(req: Request) {
         images: true,
         description: true,
         sourceUrl: true,
+        viewCount: true,
       }
     });
 

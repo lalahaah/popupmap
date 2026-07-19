@@ -2,14 +2,7 @@
 
 import React from 'react';
 
-const CATEGORIES = [
-  { label: '전체', value: '' },
-  { label: '패션', value: 'FASHION' },
-  { label: '뷰티', value: 'BEAUTY' },
-  { label: 'F&B', value: 'FOOD' },
-  { label: '굿즈', value: 'GOODS' },
-  { label: '전시', value: 'EXHIBIT' },
-];
+import { CATEGORIES } from '@/lib/constants';
 
 interface FilterChipsProps {
   selectedCategory: string;

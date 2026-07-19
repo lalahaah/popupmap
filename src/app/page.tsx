@@ -11,6 +11,7 @@ import { Popup } from "@/types/popup";
 export default function Home() {
   const [popups, setPopups] = useState<Popup[]>([]);
   const [category, setCategory] = useState('');
+  const [sortBy, setSortBy] = useState('deadline'); // 'deadline' | 'new' | 'popular'
   const [selectedPopup, setSelectedPopup] = useState<Popup | null>(null);
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
 
@@ -38,14 +39,35 @@ export default function Home() {
     fetchPopups();
   }, [category]);
 
+  const sortedPopups = [...popups].sort((a, b) => {
+    if (sortBy === 'deadline') {
+      if (!a.endDate) return 1;
+      if (!b.endDate) return -1;
+      return new Date(a.endDate).getTime() - new Date(b.endDate).getTime();
+    }
+    if (sortBy === 'new') {
+      if (!a.startDate) return 1;
+      if (!b.startDate) return -1;
+      return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+    }
+    if (sortBy === 'popular') {
+      return (b.viewCount || 0) - (a.viewCount || 0);
+    }
+    return 0;
+  });
+
   return (
     <div className="relative h-screen w-screen flex">
       <Sidebar 
-        popups={popups} category={category} onCategoryChange={setCategory} onSelectPopup={setSelectedPopup} 
+        popups={sortedPopups} category={category} onCategoryChange={setCategory} 
+        sortBy={sortBy} onSortChange={setSortBy}
+        onSelectPopup={setSelectedPopup} 
         onOpenSubmissionForm={() => setShowSubmissionForm(true)}
       />
       <MobileSheet 
-        popups={popups} category={category} onCategoryChange={setCategory} onSelectPopup={setSelectedPopup} 
+        popups={sortedPopups} category={category} onCategoryChange={setCategory} 
+        sortBy={sortBy} onSortChange={setSortBy}
+        onSelectPopup={setSelectedPopup} 
         onOpenSubmissionForm={() => setShowSubmissionForm(true)}
       />
       {/* ===================== MAP AREA ===================== */}

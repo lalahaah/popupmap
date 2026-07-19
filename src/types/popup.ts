@@ -11,4 +11,5 @@ export interface Popup {
   images: string[];
   description?: string | null;
   sourceUrl?: string | null;
+  viewCount?: number;
 }
