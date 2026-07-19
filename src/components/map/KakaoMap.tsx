@@ -97,12 +97,13 @@ export function KakaoMap({ popups, onSelectPopup }: KakaoMapProps) {
         position,
         content: contentWrapper,
         yAnchor: 1,
+        clickable: true,
       });
 
       customOverlay.setMap(map);
       overlaysRef.current.push(customOverlay);
     });
-  }, [map, popups]);
+  }, [map, popups, onSelectPopup]);
 
   return (
     <div ref={mapRef} className="w-full h-full" style={{ width: '100%', height: '100%' }} />
