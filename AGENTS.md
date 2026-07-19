@@ -29,7 +29,7 @@
 - [x] STEP B — `prisma/schema.prisma` 작성 완료 (Popup/Brand/Submission 모델, 인덱스: lat/lng, status, category). **`DATABASE_URL`(pooler, 6543) + `DIRECT_URL`(direct, 5432) 분리 설정 — Vercel 서버리스 커넥션 고갈 방지, ViewPoint에서 겪은 이슈 선제 대응.** `prisma migrate dev`는 Supabase 프로젝트 생성 후 진행
 - [x] STEP C — 관리자 인증(NextAuth v5, Credentials Provider, middleware 보호) + 시드 입력용 API(`POST /api/popups`, zod 검증)
 - [x] STEP D — 시드 데이터 50~100개 수동 입력
-- [ ] STEP E — `GET /api/popups` 반경검색
+- [x] STEP E — GET /api/popups 반경검색 구현 완료 (Haversine, category/status 필터). curl로 실제 검증 완료 (5km 반경 8건, BEAUTY 필터 3건 정확히 반환)
 - [ ] STEP F — 프론트 컴포넌트 (Sidebar, PopupCard, FilterChips) — `wireframe_main.html` 그대로 이식
 - [ ] STEP G — KakaoMap 연동 + D-day 배지 핀
 - [ ] STEP H — 모바일 바텀시트
