@@ -41,8 +41,11 @@
 - [x] STEP H — 모바일 바텀시트 구현 완료 (드래그 제스처 포함)
 - [x] STEP H-1 — 지도 터치 드래그 차단 문제 수정
 - [x] STEP H-2 — 바텀시트 드래그 제스처 추가
-- [ ] STEP I — 제보 폼 + API
-- [ ] STEP J — 관리자 승인 큐 페이지
+- [x] STEP I — 제보 폼 + API
+- [ ] **STEP J** — 관리자 승인 큐 페이지: 대기 중인 제보 목록 표시, 관리자가 
+      전체 Popup 필드(brand, description, sourceUrl, images, category, 
+      isSponsored 등) 직접 입력/수정 가능한 편집 폼 제공, 승인 시 수정된 
+      내용대로 popups 테이블에 반영, 반려 처리
 - [ ] STEP K — status 자동 갱신 배치 (Vercel Cron)
 - [ ] STEP L — 배포 & QA
 
