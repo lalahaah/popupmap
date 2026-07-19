@@ -147,7 +147,7 @@ enum SubStatus { pending approved rejected }
 - [x] **STEP C** — 관리자 인증(NextAuth v5, Credentials Provider, middleware로 `/admin/*` 보호) + `/api/popups` POST(시드 입력용, zod 검증) 
 - [x] **STEP D** — 시드 데이터 50~100개 수동 입력 (architecture_research.md 4장 전략대로, 개발과 병행 진행)
 - [x] **STEP E** — `GET /api/popups` 반경검색 구현 완료 (Haversine, category/status 필터). curl로 실제 검증 완료 (5km 반경 8건, BEAUTY 필터 3건 정확히 반환)
-- [ ] **STEP F** — 프론트: `Sidebar.tsx`, `PopupCard.tsx`, `FilterChips.tsx` (wireframe_main.html 그대로 이식)
+- [x] **STEP F** — Sidebar/PopupCard/FilterChips 구현 + 디자인 토큰(색상/폰트) 완전 적용 완료. 실제 API 데이터 8건 렌더링, 주소 필드 정상 표시, Archivo Black 폰트 및 브랜드 컬러(옐로/레드/블루) 육안+devtools 검증 완료.
 - [ ] **STEP G** — `KakaoMap.tsx` 연동 + `PopupPin.tsx` (D-day 배지)
 - [ ] **STEP H** — 모바일 `MobileSheet.tsx` (wireframe의 바텀시트 드래그 로직 이식)
 - [ ] **STEP I** — `SubmissionForm.tsx` + `POST /api/submissions`

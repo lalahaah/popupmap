@@ -30,7 +30,7 @@
 - [x] STEP C — 관리자 인증(NextAuth v5, Credentials Provider, middleware 보호) + 시드 입력용 API(`POST /api/popups`, zod 검증)
 - [x] STEP D — 시드 데이터 50~100개 수동 입력
 - [x] STEP E — GET /api/popups 반경검색 구현 완료 (Haversine, category/status 필터). curl로 실제 검증 완료 (5km 반경 8건, BEAUTY 필터 3건 정확히 반환)
-- [ ] STEP F — 프론트 컴포넌트 (Sidebar, PopupCard, FilterChips) — `wireframe_main.html` 그대로 이식
+- [x] STEP F — Sidebar/PopupCard/FilterChips 구현 + 디자인 토큰(색상/폰트) 완전 적용 완료. 실제 API 데이터 8건 렌더링, 주소 필드 정상 표시, Archivo Black 폰트 및 브랜드 컬러(옐로/레드/블루) 육안+devtools 검증 완료.
 - [ ] STEP G — KakaoMap 연동 + D-day 배지 핀
 - [ ] STEP H — 모바일 바텀시트
 - [ ] STEP I — 제보 폼 + API
@@ -50,4 +50,8 @@
    - 위 체크에서 시크릿이 발견되면 절대 커밋하지 말고 사용자에게 먼저 보고
    - push는 `main` 브랜치로 직접 (Vercel 자동배포 트리거되는 게 정상 동작이므로 별도 PR 프로세스 불필요)
 4. 막히거나 아키텍처 결정이 필요하면 코드 작성을 멈추고 사용자에게 보고 (Claude와 재상의 필요).
-5. 디자인은 `wireframe_main.html`을 그대로 컴포넌트로 쪼개는 것이 원칙 — 임의 변경 금지.
+5. 디자인은 `wireframe_main.html`을 그대로 컴포넌트로 쪼개는 것이 원칙 — 임의 변경 금지. 
+   컴포넌트 작성 시 `tailwind.config.ts`에 정의된 커스텀 토큰(`ink`/`paper`/`brandRed`/
+   `brandYellow`/`brandBlue`, `font-display`/`font-mono`/`font-sans`)을 반드시 사용할 것. 
+   Tailwind 기본 클래스(`text-black`, `border-gray-*`, 시스템 기본 폰트 등)로 대체 금지 
+   — 이걸로 실제 색상/폰트가 wireframe과 달라지는 사고가 STEP F에서 발생했음.
