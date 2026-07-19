@@ -34,7 +34,7 @@ export default function Home() {
   }, [category]);
 
   return (
-    <div className="relative h-full w-full flex">
+    <div className="relative h-screen w-screen flex">
       <Sidebar popups={popups} category={category} onCategoryChange={setCategory} />
       {/* ===================== MAP AREA ===================== */}
       <main className="flex-1 relative h-full min-h-0 min-w-0">

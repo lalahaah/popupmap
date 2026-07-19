@@ -14,6 +14,8 @@
 body {
   background: var(--paper);
   color: var(--ink);
+  height: 100vh;
+  overflow: hidden;
 }
 
 .card-border {
