@@ -96,7 +96,7 @@ export function PopupDetail({ popup, onClose }: PopupDetailProps) {
         </div>
 
         {/* Content */}
-        <div className="p-6 pt-8 flex-1 flex flex-col gap-6">
+        <div className="p-6 pt-12 flex-1 flex flex-col gap-6">
           <div>
             <div className="flex items-center gap-2 mb-3">
               <span className="text-xs font-bold px-2 py-0.5 border-2 border-ink bg-brandYellow">
