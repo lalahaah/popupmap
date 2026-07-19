@@ -22,7 +22,7 @@ const CATEGORIES = [
 ];
 
 export function MobileSheet({ popups, category, onCategoryChange, onSelectPopup }: MobileSheetProps) {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
 
   const newCount = popups.filter(p => {
     if (!p.startDate) return false;
@@ -39,17 +39,19 @@ export function MobileSheet({ popups, category, onCategoryChange, onSelectPopup 
       className="mobile-sheet md:hidden flex flex-col fixed bottom-0 left-0 right-0 bg-paper border-t-2 border-ink z-30 rounded-t-2xl overflow-hidden transition-all duration-300 shadow-[0_-4px_0_theme(colors.ink)]"
       style={{ height: expanded ? '70%' : '18%' }}
     >
+      {/* Header & Handle Area */}
       <div 
-        className="flex justify-center pt-2 pb-1 cursor-pointer" 
-        id="sheetHandle"
+        className="cursor-pointer shrink-0 select-none active:bg-neutral-100 transition-colors"
         onClick={() => setExpanded(!expanded)}
       >
-        <div className="w-10 h-1.5 bg-ink rounded-full"></div>
-      </div>
-      
-      <div className="px-4 pb-2 flex items-center justify-between shrink-0">
-        <h1 className="font-display text-lg tracking-tight">POPUP MAP</h1>
-        <div className="stub px-2 py-1 text-[10px] font-mono font-bold">오늘 {newCount}곳 NEW</div>
+        <div className="flex justify-center pt-3 pb-2" id="sheetHandle">
+          <div className="w-12 h-1.5 bg-ink rounded-full opacity-60"></div>
+        </div>
+        
+        <div className="px-4 pb-3 flex items-center justify-between">
+          <h1 className="font-display text-xl tracking-tight">POPUP MAP</h1>
+          <div className="stub px-2 py-1 text-[10px] font-mono font-bold">오늘 {newCount}곳 NEW</div>
+        </div>
       </div>
       
       <div className="px-4 pb-2 flex gap-2 overflow-x-auto scrollbar-hide shrink-0">
