@@ -18,32 +18,60 @@ interface KakaoMapProps {
 export function KakaoMap({ popups }: KakaoMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<any>(null);
+  const mapInstanceRef = useRef<any>(null);
   const overlaysRef = useRef<any[]>([]);
 
   useEffect(() => {
-    async function initMap() {
+    let observer: ResizeObserver | null = null;
+
+    async function init() {
       try {
         await loadKakaoMap();
-        if (mapRef.current && !map) {
-          const options = {
-            center: new window.kakao.maps.LatLng(37.544, 127.055), // 성수동 중심
-            level: 5,
-          };
-          const newMap = new window.kakao.maps.Map(mapRef.current, options);
-          setMap(newMap);
-          
-          // 컨테이너 크기가 늦게 확정되는 경우 대비
-          setTimeout(() => {
-            newMap.relayout();
-            window.kakao.maps.event.trigger(newMap, 'resize');
-          }, 100);
-        }
+        
+        if (!mapRef.current) return;
+
+        observer = new ResizeObserver((entries) => {
+          for (let entry of entries) {
+            const { width, height } = entry.contentRect;
+            
+            // 아직 크기가 없으면 대기
+            if (width === 0 || height === 0) continue;
+
+            // 이미 지도가 생성되었으면 무시
+            if (mapInstanceRef.current) return;
+
+            console.log(`지도 생성 완료, 컨테이너 크기: ${width}x${height}`);
+            
+            const options = {
+              center: new window.kakao.maps.LatLng(37.544, 127.055), // 성수동 중심
+              level: 5,
+            };
+            
+            const newMap = new window.kakao.maps.Map(mapRef.current, options);
+            mapInstanceRef.current = newMap;
+            setMap(newMap);
+
+            // 초기화 후 observer 해제
+            if (observer) {
+              observer.disconnect();
+            }
+          }
+        });
+
+        observer.observe(mapRef.current);
       } catch (err) {
         console.error('Failed to load Kakao map', err);
       }
     }
-    initMap();
-  }, [map]);
+
+    init();
+
+    return () => {
+      if (observer) {
+        observer.disconnect();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!map || !window.kakao) return;
@@ -59,7 +87,7 @@ export function KakaoMap({ popups }: KakaoMapProps) {
       const customOverlay = new window.kakao.maps.CustomOverlay({
         position,
         content: getPopupPinHtml(popup),
-        yAnchor: 1, // 핀의 꼬리가 위치를 가리키도록 정렬
+        yAnchor: 1,
       });
 
       customOverlay.setMap(map);
