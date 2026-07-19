@@ -37,7 +37,7 @@ export default function Home() {
     <div className="relative h-full w-full flex">
       <Sidebar popups={popups} category={category} onCategoryChange={setCategory} />
       {/* ===================== MAP AREA ===================== */}
-      <main className="flex-1 relative h-full">
+      <main className="flex-1 relative h-full min-h-0 min-w-0">
         {/* top-right controls */}
         <div className="absolute top-5 right-5 z-10 flex flex-col gap-2">
           <button className="w-11 h-11 bg-card border-2 border-ink shadow-[3px_3px_0_theme(colors.ink)] flex items-center justify-center">

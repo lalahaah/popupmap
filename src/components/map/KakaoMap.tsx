@@ -31,6 +31,12 @@ export function KakaoMap({ popups }: KakaoMapProps) {
           };
           const newMap = new window.kakao.maps.Map(mapRef.current, options);
           setMap(newMap);
+          
+          // 컨테이너 크기가 늦게 확정되는 경우 대비
+          setTimeout(() => {
+            newMap.relayout();
+            window.kakao.maps.event.trigger(newMap, 'resize');
+          }, 100);
         }
       } catch (err) {
         console.error('Failed to load Kakao map', err);
@@ -62,6 +68,6 @@ export function KakaoMap({ popups }: KakaoMapProps) {
   }, [map, popups]);
 
   return (
-    <div ref={mapRef} className="w-full h-full" />
+    <div ref={mapRef} className="w-full h-full" style={{ width: '100%', height: '100%' }} />
   );
 }
