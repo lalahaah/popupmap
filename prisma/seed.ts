@@ -226,7 +226,9 @@ async function geocode(address: string): Promise<{ lat: number; lng: number } | 
 
   // 2. 키워드 검색
   try {
-    const keywordRes = await fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(address)}`, { headers });
+    // 키워드 검색 시 " 1층" 등 상세 층수 정보가 포함되면 검색이 안 될 수 있으므로 제거
+    const searchKeyword = address.replace(/\s+[B\d]+층.*/, '');
+    const keywordRes = await fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(searchKeyword)}`, { headers });
     if (keywordRes.ok) {
       const data = await keywordRes.json();
       if (data.documents && data.documents.length > 0) {
@@ -247,6 +249,9 @@ async function geocode(address: string): Promise<{ lat: number; lng: number } | 
 }
 
 async function main() {
+  // 기존 데이터 초기화 (중복 방지)
+  await prisma.popup.deleteMany({});
+  
   let inserted = 0;
   let geocodeFailed = 0;
 
