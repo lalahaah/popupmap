@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { PopupCard } from '../list/PopupCard';
 import { Popup } from '@/types/popup';
 
@@ -23,6 +23,43 @@ const CATEGORIES = [
 
 export function MobileSheet({ popups, category, onCategoryChange, onSelectPopup }: MobileSheetProps) {
   const [expanded, setExpanded] = useState(false);
+  const [dragHeight, setDragHeight] = useState<number | null>(null);
+  const startYRef = useRef<number>(0);
+  const startHeightRef = useRef<number>(0);
+  const isDraggingRef = useRef<boolean>(false);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    startYRef.current = e.touches[0].clientY;
+    startHeightRef.current = expanded ? window.innerHeight * 0.7 : window.innerHeight * 0.18;
+    setDragHeight(startHeightRef.current);
+    isDraggingRef.current = false;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    // Only handle if we started a touch
+    if (dragHeight === null && startYRef.current === 0) return;
+    
+    const deltaY = startYRef.current - e.touches[0].clientY;
+    if (Math.abs(deltaY) > 5) {
+      isDraggingRef.current = true;
+    }
+
+    const newHeight = startHeightRef.current + deltaY;
+    const minHeight = window.innerHeight * 0.18;
+    const maxHeight = window.innerHeight * 0.70;
+    
+    setDragHeight(Math.max(minHeight, Math.min(newHeight, maxHeight)));
+  };
+
+  const handleTouchEnd = () => {
+    if (dragHeight === null) return;
+    
+    if (isDraggingRef.current) {
+      const threshold = window.innerHeight * 0.44;
+      setExpanded(dragHeight > threshold);
+    }
+    setDragHeight(null);
+  };
 
   const newCount = popups.filter(p => {
     if (!p.startDate) return false;
@@ -34,15 +71,22 @@ export function MobileSheet({ popups, category, onCategoryChange, onSelectPopup 
     return diffDays >= 0 && diffDays <= 1;
   }).length;
 
+  const currentHeight = dragHeight !== null ? `${dragHeight}px` : (expanded ? '70%' : '18%');
+
   return (
     <div 
-      className="mobile-sheet md:hidden flex flex-col fixed bottom-0 left-0 right-0 bg-paper border-t-2 border-ink z-30 rounded-t-2xl overflow-hidden transition-all duration-300 shadow-[0_-4px_0_theme(colors.ink)]"
-      style={{ height: expanded ? '70%' : '18%' }}
+      className={`mobile-sheet md:hidden flex flex-col fixed bottom-0 left-0 right-0 bg-paper border-t-2 border-ink z-30 rounded-t-2xl overflow-hidden shadow-[0_-4px_0_theme(colors.ink)] ${dragHeight === null ? 'transition-all duration-300' : ''}`}
+      style={{ height: currentHeight }}
     >
       {/* Header & Handle Area */}
       <div 
-        className="cursor-pointer shrink-0 select-none active:bg-neutral-100 transition-colors"
-        onClick={() => setExpanded(!expanded)}
+        className="cursor-pointer shrink-0 select-none active:bg-neutral-100 transition-colors touch-none"
+        onClick={() => {
+          if (!isDraggingRef.current) setExpanded(!expanded);
+        }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
         <div className="flex justify-center pt-3 pb-2" id="sheetHandle">
           <div className="w-12 h-1.5 bg-ink rounded-full opacity-60"></div>
