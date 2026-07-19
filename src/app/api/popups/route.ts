@@ -44,3 +44,73 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
+
+function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371; // Radius of the earth in km
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * 
+    Math.sin(dLon / 2) * Math.sin(dLon / 2); 
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); 
+  const d = R * c; // Distance in km
+  return d;
+}
+
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const latStr = searchParams.get("lat");
+  const lngStr = searchParams.get("lng");
+  const radiusStr = searchParams.get("radius") || "5";
+  const category = searchParams.get("category");
+  const status = searchParams.get("status");
+
+  if (!latStr || !lngStr) {
+    return NextResponse.json({ error: "Missing lat or lng parameters" }, { status: 400 });
+  }
+
+  const lat = parseFloat(latStr);
+  const lng = parseFloat(lngStr);
+  const radius = parseFloat(radiusStr);
+
+  if (isNaN(lat) || isNaN(lng) || isNaN(radius)) {
+    return NextResponse.json({ error: "Invalid lat, lng or radius parameters" }, { status: 400 });
+  }
+
+  const where: any = {};
+  if (category) {
+    where.category = category;
+  }
+  if (status) {
+    where.status = status;
+  }
+
+  try {
+    // 향후 데이터가 많아지면 PostGIS 확장으로 쿼리 레벨에서 반경 검색을 처리할 예정입니다.
+    // 현재는 데이터가 적어 애플리케이션 레벨에서 필터링합니다.
+    const allPopups = await prisma.popup.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        category: true,
+        lat: true,
+        lng: true,
+        endDate: true,
+        status: true,
+        images: true,
+      }
+    });
+
+    const popups = allPopups.filter(popup => {
+      const distance = getDistance(lat, lng, popup.lat, popup.lng);
+      return distance <= radius;
+    });
+
+    return NextResponse.json({ popups });
+  } catch (error) {
+    console.error("GET /api/popups error:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
