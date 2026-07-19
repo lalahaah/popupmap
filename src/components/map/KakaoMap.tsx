@@ -38,8 +38,11 @@ export function KakaoMap({ popups, onSelectPopup }: KakaoMapProps) {
             // 아직 크기가 없으면 대기
             if (width === 0 || height === 0) continue;
 
-            // 이미 지도가 생성되었으면 무시
-            if (mapInstanceRef.current) return;
+            // 이미 지도가 생성되었으면 크기 변경에 맞춰 relayout 호출
+            if (mapInstanceRef.current) {
+              mapInstanceRef.current.relayout();
+              continue;
+            }
 
             console.log(`지도 생성 완료, 컨테이너 크기: ${width}x${height}`);
             
@@ -52,10 +55,7 @@ export function KakaoMap({ popups, onSelectPopup }: KakaoMapProps) {
             mapInstanceRef.current = newMap;
             setMap(newMap);
 
-            // 초기화 후 observer 해제
-            if (observer) {
-              observer.disconnect();
-            }
+
           }
         });
 
@@ -106,6 +106,6 @@ export function KakaoMap({ popups, onSelectPopup }: KakaoMapProps) {
   }, [map, popups, onSelectPopup]);
 
   return (
-    <div ref={mapRef} className="w-full h-full" style={{ width: '100%', height: '100%' }} />
+    <div ref={mapRef} className="w-full h-full touch-none" style={{ width: '100%', height: '100%' }} />
   );
 }
