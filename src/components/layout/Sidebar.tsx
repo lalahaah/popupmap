@@ -9,9 +9,10 @@ interface SidebarProps {
   popups: Popup[];
   category: string;
   onCategoryChange: (category: string) => void;
+  onSelectPopup: (popup: Popup) => void;
 }
 
-export function Sidebar({ popups, category, onCategoryChange }: SidebarProps) {
+export function Sidebar({ popups, category, onCategoryChange, onSelectPopup }: SidebarProps) {
 
   const newCount = popups.filter(p => {
     if (!p.startDate) return false;
@@ -82,7 +83,7 @@ export function Sidebar({ popups, category, onCategoryChange }: SidebarProps) {
       {/* List */}
       <div className="flex-1 overflow-y-auto scrollbar-hide px-5 py-4 space-y-4">
         {popups.map(popup => (
-          <PopupCard key={popup.id} popup={popup} />
+          <PopupCard key={popup.id} popup={popup} onClick={() => onSelectPopup(popup)} />
         ))}
       </div>
 

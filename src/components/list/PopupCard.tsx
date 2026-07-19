@@ -1,7 +1,7 @@
 import React from 'react';
 import { Popup } from '@/types/popup';
 
-export function PopupCard({ popup }: { popup: Popup }) {
+export function PopupCard({ popup, onClick }: { popup: Popup; onClick?: () => void }) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -74,7 +74,10 @@ export function PopupCard({ popup }: { popup: Popup }) {
       : '상시운영';
 
   return (
-    <div className="card-border bg-card p-3 flex gap-3 cursor-pointer transition-all border-2 border-ink shadow-[4px_4px_0_theme(colors.ink)] hover:shadow-[6px_6px_0_theme(colors.ink)] hover:-translate-x-[2px] hover:-translate-y-[2px]">
+    <div 
+      onClick={onClick}
+      className="card-border bg-card p-3 flex gap-3 cursor-pointer transition-all border-2 border-ink shadow-[4px_4px_0_theme(colors.ink)] hover:shadow-[6px_6px_0_theme(colors.ink)] hover:-translate-x-[2px] hover:-translate-y-[2px]"
+    >
       <div className="relative w-20 h-20 shrink-0 bg-neutral-200 border-2 border-ink overflow-hidden">
         {popup.images && popup.images.length > 0 ? (
           <img src={popup.images[0]} alt={popup.name} className="w-full h-full object-cover" />

@@ -3,11 +3,13 @@
 import { useEffect, useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { KakaoMap } from "@/components/map/KakaoMap";
+import { PopupDetail } from "@/components/detail/PopupDetail";
 import { Popup } from "@/types/popup";
 
 export default function Home() {
   const [popups, setPopups] = useState<Popup[]>([]);
   const [category, setCategory] = useState('');
+  const [selectedPopup, setSelectedPopup] = useState<Popup | null>(null);
 
   // 서울 중심 고정값
   const lat = 37.544;
@@ -35,7 +37,7 @@ export default function Home() {
 
   return (
     <div className="relative h-screen w-screen flex">
-      <Sidebar popups={popups} category={category} onCategoryChange={setCategory} />
+      <Sidebar popups={popups} category={category} onCategoryChange={setCategory} onSelectPopup={setSelectedPopup} />
       {/* ===================== MAP AREA ===================== */}
       <main className="flex-1 relative h-full min-h-0 min-w-0">
         {/* top-right controls */}
@@ -45,12 +47,19 @@ export default function Home() {
           </button>
         </div>
 
-        <KakaoMap popups={popups} />
+        <KakaoMap popups={popups} onSelectPopup={setSelectedPopup} />
 
         <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-10 bg-card border-2 border-ink px-4 py-2 text-xs font-bold shadow-[3px_3px_0_theme(colors.ink)]">
           지도를 움직이면 이 지역 팝업으로 다시 검색
         </div>
       </main>
+
+      {selectedPopup && (
+        <PopupDetail 
+          popup={selectedPopup} 
+          onClose={() => setSelectedPopup(null)} 
+        />
+      )}
     </div>
   );
 }

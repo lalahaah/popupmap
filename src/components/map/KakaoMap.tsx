@@ -13,9 +13,10 @@ declare global {
 
 interface KakaoMapProps {
   popups: Popup[];
+  onSelectPopup?: (popup: Popup) => void;
 }
 
-export function KakaoMap({ popups }: KakaoMapProps) {
+export function KakaoMap({ popups, onSelectPopup }: KakaoMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<any>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -84,9 +85,17 @@ export function KakaoMap({ popups }: KakaoMapProps) {
     popups.forEach(popup => {
       const position = new window.kakao.maps.LatLng(popup.lat, popup.lng);
       
+      const contentWrapper = document.createElement('div');
+      contentWrapper.innerHTML = getPopupPinHtml(popup);
+      if (onSelectPopup) {
+        contentWrapper.addEventListener('click', () => {
+          onSelectPopup(popup);
+        });
+      }
+
       const customOverlay = new window.kakao.maps.CustomOverlay({
         position,
-        content: getPopupPinHtml(popup),
+        content: contentWrapper,
         yAnchor: 1,
       });
 

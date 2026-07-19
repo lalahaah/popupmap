@@ -102,6 +102,8 @@ export async function GET(req: Request) {
         endDate: true,
         status: true,
         images: true,
+        description: true,
+        sourceUrl: true,
       }
     });
 
