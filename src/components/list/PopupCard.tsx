@@ -1,7 +1,15 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Popup } from '@/types/popup';
 
-export function PopupCard({ popup, onClick }: { popup: Popup; onClick?: () => void }) {
+export function PopupCard({ popup, onClick, isHighlighted }: { popup: Popup; onClick?: () => void; isHighlighted?: boolean }) {
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isHighlighted && cardRef.current) {
+      cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [isHighlighted]);
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -75,8 +83,9 @@ export function PopupCard({ popup, onClick }: { popup: Popup; onClick?: () => vo
 
   return (
     <div 
+      ref={cardRef}
       onClick={onClick}
-      className="card-border bg-card p-3 flex gap-3 cursor-pointer transition-all border-2 border-ink shadow-[4px_4px_0_theme(colors.ink)] hover:shadow-[6px_6px_0_theme(colors.ink)] hover:-translate-x-[2px] hover:-translate-y-[2px]"
+      className={`card-border p-3 flex gap-3 cursor-pointer transition-all border-2 shadow-[4px_4px_0_theme(colors.ink)] hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[6px_6px_0_theme(colors.ink)] ${isHighlighted ? 'bg-brandYellow/20 border-brandRed' : 'bg-card border-ink'}`}
     >
       <div className="relative w-20 h-20 shrink-0 bg-neutral-200 border-2 border-ink overflow-hidden">
         {popup.images && popup.images.length > 0 ? (

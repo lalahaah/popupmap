@@ -12,7 +12,6 @@ model Popup {
   id          String     @id @default(uuid())
   name        String
   brandId     String?
-  brand       Brand?     @relation(fields: [brandId], references: [id])
   description String?
   category    Category
   address     String
@@ -28,6 +27,7 @@ model Popup {
   viewCount   Int        @default(0)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+  brand       Brand?     @relation(fields: [brandId], references: [id])
 
   @@index([lat, lng])
   @@index([status])
@@ -35,11 +35,11 @@ model Popup {
 }
 
 model Brand {
-  id              String   @id @default(uuid())
+  id              String  @id @default(uuid())
   name            String
   instagramHandle String?
   contactEmail    String?
-  isPartner       Boolean  @default(false)
+  isPartner       Boolean @default(false)
   popups          Popup[]
 }
 

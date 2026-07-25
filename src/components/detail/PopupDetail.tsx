@@ -4,9 +4,10 @@ import { Popup } from '@/types/popup';
 interface PopupDetailProps {
   popup: Popup;
   onClose: () => void;
+  onShowOnMap?: () => void;
 }
 
-export function PopupDetail({ popup, onClose }: PopupDetailProps) {
+export function PopupDetail({ popup, onClose, onShowOnMap }: PopupDetailProps) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -107,7 +108,20 @@ export function PopupDetail({ popup, onClose }: PopupDetailProps) {
               )}
             </div>
             <h2 className="font-display text-3xl tracking-tight leading-none mb-3">{popup.name}</h2>
-            <p className="text-sm font-bold text-neutral-600">{popup.address || '주소 정보 없음'}</p>
+            
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-bold text-neutral-600">{popup.address || '주소 정보 없음'}</p>
+              {onShowOnMap && (
+                <button 
+                  onClick={onShowOnMap}
+                  className="flex items-center gap-1 shrink-0 px-2 py-1 bg-paper border-2 border-ink text-xs font-bold shadow-[2px_2px_0_theme(colors.ink)] active:translate-x-px active:translate-y-px active:shadow-none"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                  지도에서 보기
+                </button>
+              )}
+            </div>
+            
             <p className="text-sm font-mono font-bold mt-1 text-brandBlue">{dateRange}</p>
           </div>
 

@@ -154,9 +154,17 @@ enum SubStatus { pending approved rejected }
       없어 전체 높이 체인이 0으로 계산된 것. h-screen(뷰포트 고정)으로 교체 후 해결.
       앞으로 전체 화면 레이아웃 컴포넌트는 h-full 대신 h-screen을 최상위에 
       명시하는 걸 기본으로 할 것.
-- [ ] **STEP H** — 모바일 `MobileSheet.tsx` (wireframe의 바텀시트 드래그 로직 이식)
-- [ ] **STEP I** — `SubmissionForm.tsx` + `POST /api/submissions`
-- [ ] **STEP J** — 관리자 승인 큐 페이지 (`/admin/submissions`) + `PATCH` 연동
+- [x] **STEP H-0** — 팝업 상세 뷰: 카드/마커 클릭 시 상세 정보(설명, 주소, 기간, 출처 링크) 
+      표시. plan.md 최초 설계에서 누락된 항목, STEP G 완료 후 추가됨.
+- [x] **STEP H** — 모바일 바텀시트 (wireframe_main.html의 .mobile-sheet 이식)
+- [x] **STEP H-1** — 지도 터치 드래그 차단 문제 수정
+- [x] **STEP H-2** — 바텀시트 드래그 제스처 추가
+- [x] **STEP I** — `SubmissionForm.tsx` + `POST /api/submissions`
+- [x] **STEP J** — 관리자 승인 큐 (전체 필드 편집 가능) 완료
+- [x] **STEP J-1** — 기타 카테고리 추가 + 정렬 기능(마감임박/신규/인기순) 구현 완료
+- [ ] **STEP J-2** — 사이드바/지도/상세팝업 상호 연동: 카드 클릭 시 지도 중심이동+핀 
+      하이라이트, 핀 클릭 시 리스트 자동스크롤+하이라이트, 상세팝업에 "지도에서 
+      보기" 버튼 추가 (모바일은 바텀시트 자동 축소 포함)
 - [ ] **STEP K** — `status.ts` 배치 로직 → Vercel Cron 1일 1회 등록 (upcoming/ongoing/ended 자동 갱신)
 - [ ] **STEP L** — Vercel 배포, 도메인 연결, 최종 QA
 

@@ -1,6 +1,6 @@
 import { Popup } from '@/types/popup';
 
-export function getPopupPinHtml(popup: Popup): string {
+export function getPopupPinHtml(popup: Popup, isHighlighted: boolean = false): string {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -36,13 +36,18 @@ export function getPopupPinHtml(popup: Popup): string {
 
   if (!dDayText) dDayText = 'D-?';
 
-  const badgeClass = isNew 
-    ? 'bg-brandRed !text-white' 
-    : '';
+  let bgClass = isNew ? 'bg-brandRed !text-white' : 'bg-paper';
+  if (isHighlighted && !isNew) {
+    bgClass = 'bg-brandYellow text-ink';
+  }
+
+  const highlightClass = isHighlighted
+    ? 'scale-125 border-brandRed z-50 shadow-[4px_4px_0_theme(colors.ink)]'
+    : 'border-ink shadow-[2px_2px_0_theme(colors.ink)]';
 
   return `
-    <div class="relative cursor-pointer hover:-translate-y-1 transition-transform" title="${popup.name}">
-      <div class="stub px-2 py-1 text-[10px] font-mono font-bold border-2 border-ink ${badgeClass}">
+    <div class="relative cursor-pointer transition-all duration-300 ${isHighlighted ? '-translate-y-2 z-50' : 'hover:-translate-y-1'}" title="${popup.name}">
+      <div class="stub px-2 py-1 text-[10px] font-mono font-bold border-2 ${bgClass} ${highlightClass}">
         ${dDayText}
       </div>
     </div>

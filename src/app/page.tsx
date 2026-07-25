@@ -14,6 +14,8 @@ export default function Home() {
   const [sortBy, setSortBy] = useState('deadline'); // 'deadline' | 'new' | 'popular'
   const [selectedPopup, setSelectedPopup] = useState<Popup | null>(null);
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
+  const [highlightedPopupId, setHighlightedPopupId] = useState<string | null>(null);
+  const [isSheetExpanded, setIsSheetExpanded] = useState(false);
 
   // 서울 중심 고정값
   const lat = 37.544;
@@ -56,19 +58,36 @@ export default function Home() {
     return 0;
   });
 
+  const handleSelectPopup = (popup: Popup) => {
+    setSelectedPopup(popup);
+    setHighlightedPopupId(popup.id);
+  };
+
+  const handleShowOnMap = () => {
+    if (selectedPopup) {
+      setHighlightedPopupId(selectedPopup.id);
+    }
+    setSelectedPopup(null);
+    setIsSheetExpanded(false);
+  };
+
   return (
     <div className="relative h-screen w-screen flex">
       <Sidebar 
         popups={sortedPopups} category={category} onCategoryChange={setCategory} 
         sortBy={sortBy} onSortChange={setSortBy}
-        onSelectPopup={setSelectedPopup} 
+        onSelectPopup={handleSelectPopup} 
         onOpenSubmissionForm={() => setShowSubmissionForm(true)}
+        highlightedPopupId={highlightedPopupId}
       />
       <MobileSheet 
         popups={sortedPopups} category={category} onCategoryChange={setCategory} 
         sortBy={sortBy} onSortChange={setSortBy}
-        onSelectPopup={setSelectedPopup} 
+        onSelectPopup={handleSelectPopup} 
         onOpenSubmissionForm={() => setShowSubmissionForm(true)}
+        highlightedPopupId={highlightedPopupId}
+        isExpanded={isSheetExpanded}
+        onExpandedChange={setIsSheetExpanded}
       />
       {/* ===================== MAP AREA ===================== */}
       <main className="flex-1 relative h-full min-h-0 min-w-0">
@@ -79,7 +98,11 @@ export default function Home() {
           </button>
         </div>
 
-        <KakaoMap popups={popups} onSelectPopup={setSelectedPopup} />
+        <KakaoMap 
+          popups={popups} 
+          onSelectPopup={handleSelectPopup} 
+          highlightedPopupId={highlightedPopupId} 
+        />
 
         <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-10 bg-card border-2 border-ink px-4 py-2 text-xs font-bold shadow-[3px_3px_0_theme(colors.ink)]">
           지도를 움직이면 이 지역 팝업으로 다시 검색
@@ -90,6 +113,7 @@ export default function Home() {
         <PopupDetail 
           popup={selectedPopup} 
           onClose={() => setSelectedPopup(null)} 
+          onShowOnMap={handleShowOnMap}
         />
       )}
 

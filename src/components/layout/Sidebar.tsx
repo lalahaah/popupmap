@@ -14,9 +14,10 @@ interface SidebarProps {
   onSortChange: (sort: string) => void;
   onSelectPopup: (popup: Popup) => void;
   onOpenSubmissionForm: () => void;
+  highlightedPopupId?: string | null;
 }
 
-export function Sidebar({ popups, category, onCategoryChange, sortBy, onSortChange, onSelectPopup, onOpenSubmissionForm }: SidebarProps) {
+export function Sidebar({ popups, category, onCategoryChange, sortBy, onSortChange, onSelectPopup, onOpenSubmissionForm, highlightedPopupId }: SidebarProps) {
 
   const newCount = popups.filter(p => {
     if (!p.startDate) return false;
@@ -93,7 +94,12 @@ export function Sidebar({ popups, category, onCategoryChange, sortBy, onSortChan
       {/* List */}
       <div className="flex-1 overflow-y-auto scrollbar-hide px-5 py-4 space-y-4">
         {popups.map(popup => (
-          <PopupCard key={popup.id} popup={popup} onClick={() => onSelectPopup(popup)} />
+          <PopupCard 
+            key={popup.id} 
+            popup={popup} 
+            onClick={() => onSelectPopup(popup)} 
+            isHighlighted={highlightedPopupId === popup.id}
+          />
         ))}
       </div>
 

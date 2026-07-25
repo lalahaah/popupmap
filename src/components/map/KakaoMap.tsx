@@ -14,13 +14,14 @@ declare global {
 interface KakaoMapProps {
   popups: Popup[];
   onSelectPopup?: (popup: Popup) => void;
+  highlightedPopupId?: string | null;
 }
 
-export function KakaoMap({ popups, onSelectPopup }: KakaoMapProps) {
+export function KakaoMap({ popups, onSelectPopup, highlightedPopupId }: KakaoMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<any>(null);
   const mapInstanceRef = useRef<any>(null);
-  const overlaysRef = useRef<any[]>([]);
+  const overlaysRef = useRef<Array<{ id: string; overlay: any; popup: Popup }>>([]);
 
   useEffect(() => {
     let observer: ResizeObserver | null = null;
@@ -35,10 +36,8 @@ export function KakaoMap({ popups, onSelectPopup }: KakaoMapProps) {
           for (let entry of entries) {
             const { width, height } = entry.contentRect;
             
-            // 아직 크기가 없으면 대기
             if (width === 0 || height === 0) continue;
 
-            // 이미 지도가 생성되었으면 크기 변경에 맞춰 relayout 호출
             if (mapInstanceRef.current) {
               mapInstanceRef.current.relayout();
               continue;
@@ -54,8 +53,6 @@ export function KakaoMap({ popups, onSelectPopup }: KakaoMapProps) {
             const newMap = new window.kakao.maps.Map(mapRef.current, options);
             mapInstanceRef.current = newMap;
             setMap(newMap);
-
-
           }
         });
 
@@ -77,16 +74,15 @@ export function KakaoMap({ popups, onSelectPopup }: KakaoMapProps) {
   useEffect(() => {
     if (!map || !window.kakao) return;
 
-    // Remove existing overlays
-    overlaysRef.current.forEach(overlay => overlay.setMap(null));
+    overlaysRef.current.forEach(item => item.overlay.setMap(null));
     overlaysRef.current = [];
 
-    // Add new overlays
     popups.forEach(popup => {
+      const isHighlighted = popup.id === highlightedPopupId;
       const position = new window.kakao.maps.LatLng(popup.lat, popup.lng);
       
       const contentWrapper = document.createElement('div');
-      contentWrapper.innerHTML = getPopupPinHtml(popup);
+      contentWrapper.innerHTML = getPopupPinHtml(popup, isHighlighted);
       if (onSelectPopup) {
         contentWrapper.addEventListener('click', () => {
           onSelectPopup(popup);
@@ -98,12 +94,36 @@ export function KakaoMap({ popups, onSelectPopup }: KakaoMapProps) {
         content: contentWrapper,
         yAnchor: 1,
         clickable: true,
+        zIndex: isHighlighted ? 50 : 1,
       });
 
       customOverlay.setMap(map);
-      overlaysRef.current.push(customOverlay);
+      overlaysRef.current.push({ id: popup.id, overlay: customOverlay, popup });
     });
-  }, [map, popups, onSelectPopup]);
+  }, [map, popups]);
+
+  useEffect(() => {
+    if (!map || !window.kakao || overlaysRef.current.length === 0) return;
+
+    overlaysRef.current.forEach(({ id, overlay, popup }) => {
+      const isHighlighted = id === highlightedPopupId;
+      const contentWrapper = document.createElement('div');
+      contentWrapper.innerHTML = getPopupPinHtml(popup, isHighlighted);
+      if (onSelectPopup) {
+        contentWrapper.addEventListener('click', () => {
+          onSelectPopup(popup);
+        });
+      }
+      overlay.setContent(contentWrapper);
+      overlay.setZIndex(isHighlighted ? 50 : 1);
+    });
+
+    const highlightedItem = overlaysRef.current.find(item => item.id === highlightedPopupId);
+    if (highlightedItem && map) {
+      const position = new window.kakao.maps.LatLng(highlightedItem.popup.lat, highlightedItem.popup.lng);
+      map.panTo(position);
+    }
+  }, [highlightedPopupId]);
 
   return (
     <div ref={mapRef} className="w-full h-full" style={{ width: '100%', height: '100%' }} />

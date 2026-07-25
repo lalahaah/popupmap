@@ -3,6 +3,7 @@
 import React, { useState, useRef } from 'react';
 import { PopupCard } from '../list/PopupCard';
 import { Popup } from '@/types/popup';
+import { CATEGORIES, SORT_TABS } from '@/lib/constants';
 
 interface MobileSheetProps {
   popups: Popup[];
@@ -12,12 +13,12 @@ interface MobileSheetProps {
   onSortChange: (sort: string) => void;
   onSelectPopup: (popup: Popup) => void;
   onOpenSubmissionForm: () => void;
+  highlightedPopupId?: string | null;
+  isExpanded?: boolean;
+  onExpandedChange?: (expanded: boolean) => void;
 }
 
-import { CATEGORIES, SORT_TABS } from '@/lib/constants';
-
-export function MobileSheet({ popups, category, onCategoryChange, sortBy, onSortChange, onSelectPopup, onOpenSubmissionForm }: MobileSheetProps) {
-  const [expanded, setExpanded] = useState(false);
+export function MobileSheet({ popups, category, onCategoryChange, sortBy, onSortChange, onSelectPopup, onOpenSubmissionForm, highlightedPopupId, isExpanded = false, onExpandedChange }: MobileSheetProps) {
   const [dragHeight, setDragHeight] = useState<number | null>(null);
   const startYRef = useRef<number>(0);
   const startHeightRef = useRef<number>(0);
@@ -25,13 +26,12 @@ export function MobileSheet({ popups, category, onCategoryChange, sortBy, onSort
 
   const handleTouchStart = (e: React.TouchEvent) => {
     startYRef.current = e.touches[0].clientY;
-    startHeightRef.current = expanded ? window.innerHeight * 0.7 : window.innerHeight * 0.18;
+    startHeightRef.current = isExpanded ? window.innerHeight * 0.7 : window.innerHeight * 0.18;
     setDragHeight(startHeightRef.current);
     isDraggingRef.current = false;
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    // Only handle if we started a touch
     if (dragHeight === null && startYRef.current === 0) return;
     
     const deltaY = startYRef.current - e.touches[0].clientY;
@@ -51,7 +51,9 @@ export function MobileSheet({ popups, category, onCategoryChange, sortBy, onSort
     
     if (isDraggingRef.current) {
       const threshold = window.innerHeight * 0.44;
-      setExpanded(dragHeight > threshold);
+      if (onExpandedChange) {
+        onExpandedChange(dragHeight > threshold);
+      }
     }
     setDragHeight(null);
   };
@@ -66,7 +68,7 @@ export function MobileSheet({ popups, category, onCategoryChange, sortBy, onSort
     return diffDays >= 0 && diffDays <= 1;
   }).length;
 
-  const currentHeight = dragHeight !== null ? `${dragHeight}px` : (expanded ? '70%' : '18%');
+  const currentHeight = dragHeight !== null ? `${dragHeight}px` : (isExpanded ? '70%' : '18%');
 
   return (
     <div 
@@ -77,7 +79,7 @@ export function MobileSheet({ popups, category, onCategoryChange, sortBy, onSort
       <div 
         className="cursor-pointer shrink-0 select-none active:bg-neutral-100 transition-colors touch-none"
         onClick={() => {
-          if (!isDraggingRef.current) setExpanded(!expanded);
+          if (!isDraggingRef.current && onExpandedChange) onExpandedChange(!isExpanded);
         }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -123,6 +125,7 @@ export function MobileSheet({ popups, category, onCategoryChange, sortBy, onSort
             key={popup.id} 
             popup={popup} 
             onClick={() => onSelectPopup(popup)} 
+            isHighlighted={highlightedPopupId === popup.id}
           />
         ))}
         {popups.length === 0 && (
