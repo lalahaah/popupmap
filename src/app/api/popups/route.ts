@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { calculatePopupStatus } from "@/lib/status";
 
+export const dynamic = 'force-dynamic';
+
 const popupSchema = z.object({
   name: z.string(),
   brandId: z.string().optional(),

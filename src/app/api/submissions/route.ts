@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
+export const dynamic = 'force-dynamic';
+
 const submissionSchema = z.object({
   name: z.string().min(1, '이름을 입력해주세요.'),
   address: z.string().min(1, '주소를 입력해주세요.'),

@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import { calculatePopupStatus } from '@/lib/status';
 
+export const dynamic = 'force-dynamic';
+
 const approveSchema = z.object({
   action: z.literal('approve'),
   editedData: z.object({
