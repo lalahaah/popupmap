@@ -63,9 +63,13 @@ export default function PopupsClient({ initialPopups }: { initialPopups: any[] }
 
   const handleUpdate = async (id: string, data: PopupFormData) => {
     try {
+      const cImg = data.cardImage?.trim() || '';
+      const dImg = data.detailImage?.trim() || '';
+      const images = (cImg || dImg) ? [cImg || dImg, dImg || cImg] : [];
+
       const payload = {
         ...data,
-        images: data.images ? data.images.split(',').map(s => s.trim()).filter(Boolean) : [],
+        images,
       };
 
       const res = await fetch(`/api/admin/popups/${id}`, {
@@ -166,7 +170,8 @@ export default function PopupsClient({ initialPopups }: { initialPopups: any[] }
                     ...popup,
                     startDate: new Date(popup.startDate).toISOString().split('T')[0],
                     endDate: popup.endDate ? new Date(popup.endDate).toISOString().split('T')[0] : '',
-                    images: popup.images?.join(', ') || '',
+                    cardImage: popup.images?.[0] || '',
+                    detailImage: popup.images?.[1] || '',
                     brand: popup.brand?.name || '', // TODO: DB에 brand가 include 안 되어 있으면 이슈 -> API에서 include 확인 필요
                   }}
                   onSubmit={(data) => handleUpdate(popup.id, data)}

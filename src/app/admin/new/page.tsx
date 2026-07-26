@@ -8,9 +8,13 @@ export default function AdminNewPopupPage() {
   const router = useRouter();
 
   const handleSubmit = async (data: PopupFormData) => {
+    const cImg = data.cardImage?.trim() || '';
+    const dImg = data.detailImage?.trim() || '';
+    const images = (cImg || dImg) ? [cImg || dImg, dImg || cImg] : [];
+
     const payload = {
       ...data,
-      images: data.images ? data.images.split(',').map(s => s.trim()).filter(Boolean) : [],
+      images,
     };
 
     const res = await fetch('/api/popups', {

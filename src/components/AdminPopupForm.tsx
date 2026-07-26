@@ -12,7 +12,8 @@ export interface PopupFormData {
   endDate: string;
   sourceType: string;
   sourceUrl: string;
-  images: string;
+  cardImage: string;
+  detailImage: string;
   isSponsored: boolean;
 }
 
@@ -44,7 +45,8 @@ export default function AdminPopupForm({
     endDate: initialData?.endDate || '',
     sourceType: initialData?.sourceType || 'manual',
     sourceUrl: initialData?.sourceUrl || '',
-    images: initialData?.images || '',
+    cardImage: initialData?.cardImage || '',
+    detailImage: initialData?.detailImage || '',
     isSponsored: initialData?.isSponsored || false,
   });
 
@@ -126,8 +128,12 @@ export default function AdminPopupForm({
           <input name="sourceUrl" value={formData.sourceUrl} onChange={handleChange} placeholder="http://..." className="w-full p-2 border-2 border-ink text-sm" />
         </div>
         <div className="col-span-2">
-          <label className="block text-xs font-bold mb-1">이미지 URL (쉼표 구분)</label>
-          <input name="images" value={formData.images} onChange={handleChange} className="w-full p-2 border-2 border-ink text-sm" />
+          <label className="block text-xs font-bold mb-1">카드 이미지 (정사각형 권장, 400×400px)</label>
+          <input name="cardImage" value={formData.cardImage} onChange={handleChange} placeholder="http://..." className="w-full p-2 border-2 border-ink text-sm" />
+        </div>
+        <div className="col-span-2">
+          <label className="block text-xs font-bold mb-1">상세페이지 이미지 (가로형 권장, 800×500px)</label>
+          <input name="detailImage" value={formData.detailImage} onChange={handleChange} placeholder="http://..." className="w-full p-2 border-2 border-ink text-sm" />
         </div>
         <div className="col-span-2 flex items-center gap-2 mt-2">
           <input type="checkbox" name="isSponsored" checked={formData.isSponsored} onChange={handleChange} id="sponsor" className="w-4 h-4" />

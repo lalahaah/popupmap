@@ -63,9 +63,13 @@ function EditForm({ submission, onSuccess, onCancel }: { submission: any, onSucc
         if (!data?.sourceUrl) {
           throw new Error('승인 시 원문 링크(sourceUrl)는 필수입니다.');
         }
+        const cImg = data.cardImage?.trim() || '';
+        const dImg = data.detailImage?.trim() || '';
+        const images = (cImg || dImg) ? [cImg || dImg, dImg || cImg] : [];
+
         payload.editedData = {
           ...data,
-          images: data.images ? data.images.split(',').map((s: string) => s.trim()).filter(Boolean) : [],
+          images,
         };
       }
 
@@ -89,7 +93,8 @@ function EditForm({ submission, onSuccess, onCancel }: { submission: any, onSucc
   const initialData = {
     ...submission.popupData,
     sourceType: 'user_submit',
-    images: submission.popupData.images?.join(', ') || '',
+    cardImage: submission.popupData.images?.[0] || '',
+    detailImage: submission.popupData.images?.[1] || '',
   };
 
   return (

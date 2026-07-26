@@ -79,7 +79,7 @@ export function PopupDetail({ popup, onClose, onShowOnMap }: PopupDetailProps) {
         {/* Header Image */}
         <div className="relative w-full h-[250px] bg-neutral-200 border-b-2 border-ink shrink-0">
           {popup.images && popup.images.length > 0 ? (
-            <img src={popup.images[0]} alt={popup.name} className="w-full h-full object-cover" />
+            <img src={popup.images[1] || popup.images[0]} alt={popup.name} className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-brandBlue to-brandRed"></div>
           )}
