@@ -162,9 +162,9 @@ enum SubStatus { pending approved rejected }
 - [x] **STEP I** — `SubmissionForm.tsx` + `POST /api/submissions`
 - [x] **STEP J** — 관리자 승인 큐 (전체 필드 편집 가능) 완료
 - [x] **STEP J-1** — 기타 카테고리 추가 + 정렬 기능(마감임박/신규/인기순) 구현 완료
-- [ ] **STEP J-2** — 사이드바/지도/상세팝업 상호 연동: 카드 클릭 시 지도 중심이동+핀 
-      하이라이트, 핀 클릭 시 리스트 자동스크롤+하이라이트, 상세팝업에 "지도에서 
-      보기" 버튼 추가 (모바일은 바텀시트 자동 축소 포함)
+- [x] **STEP J-2** — 사이드바-지도-상세팝업 상호 연동 완료
+- [x] **STEP J-3** — 카드/핀 클릭 하이라이트 연동 통일 + 시각 개선 완료
+- [x] **STEP J-4** — 상세팝업 배경 블러 제거, 지도 반응 동시 노출 완료
 - [ ] **STEP K** — `status.ts` 배치 로직 → Vercel Cron 1일 1회 등록 (upcoming/ongoing/ended 자동 갱신)
 - [ ] **STEP L** — Vercel 배포, 도메인 연결, 최종 QA
 
