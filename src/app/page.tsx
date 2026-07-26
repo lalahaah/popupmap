@@ -13,6 +13,7 @@ export default function Home() {
   const [category, setCategory] = useState('');
   const [sortBy, setSortBy] = useState('deadline'); // 'deadline' | 'new' | 'popular'
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [selectedPopup, setSelectedPopup] = useState<Popup | null>(null);
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
   const [highlightedPopupId, setHighlightedPopupId] = useState<string | null>(null);
@@ -25,8 +26,18 @@ export default function Home() {
   const radius = 5;
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
     async function fetchPopups() {
-      let url = `/api/popups?lat=${mapCenter.lat}&lng=${mapCenter.lng}&radius=${radius}`;
+      const q = debouncedSearchQuery.trim();
+      let url = q 
+        ? `/api/popups?q=${encodeURIComponent(q)}` 
+        : `/api/popups?lat=${mapCenter.lat}&lng=${mapCenter.lng}&radius=${radius}`;
       if (category) {
         url += `&category=${category}`;
       }
@@ -41,7 +52,7 @@ export default function Home() {
       }
     }
     fetchPopups();
-  }, [category, mapCenter]);
+  }, [category, mapCenter, debouncedSearchQuery]);
 
   const handleCurrentLocation = () => {
     if (!navigator.geolocation) {
@@ -91,13 +102,6 @@ export default function Home() {
       return (b.viewCount || 0) - (a.viewCount || 0);
     }
     return 0;
-  }).filter(popup => {
-    if (!searchQuery) return true;
-    const lowerQuery = searchQuery.toLowerCase();
-    return (
-      (popup.name?.toLowerCase().includes(lowerQuery)) ||
-      (popup.address?.toLowerCase().includes(lowerQuery))
-    );
   });
 
   const handleSelectPopup = (popup: Popup, action: 'select' | 'showOnMap' = 'select') => {

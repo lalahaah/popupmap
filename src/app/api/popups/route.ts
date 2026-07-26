@@ -109,17 +109,10 @@ export async function GET(req: Request) {
   const radiusStr = searchParams.get("radius") || "5";
   const category = searchParams.get("category");
   const status = searchParams.get("status");
+  const q = searchParams.get("q");
 
-  if (!latStr || !lngStr) {
+  if (!q && (!latStr || !lngStr)) {
     return NextResponse.json({ error: "Missing lat or lng parameters" }, { status: 400 });
-  }
-
-  const lat = parseFloat(latStr);
-  const lng = parseFloat(lngStr);
-  const radius = parseFloat(radiusStr);
-
-  if (isNaN(lat) || isNaN(lng) || isNaN(radius)) {
-    return NextResponse.json({ error: "Invalid lat, lng or radius parameters" }, { status: 400 });
   }
 
   const where: any = {};
@@ -128,6 +121,12 @@ export async function GET(req: Request) {
   }
   if (status) {
     where.status = status;
+  }
+  if (q) {
+    where.OR = [
+      { name: { contains: q, mode: 'insensitive' } },
+      { address: { contains: q, mode: 'insensitive' } }
+    ];
   }
 
   try {
@@ -152,10 +151,22 @@ export async function GET(req: Request) {
       }
     });
 
-    const popups = allPopups.filter(popup => {
-      const distance = getDistance(lat, lng, popup.lat, popup.lng);
-      return distance <= radius;
-    });
+    let popups = allPopups;
+
+    if (!q) {
+      const lat = parseFloat(latStr!);
+      const lng = parseFloat(lngStr!);
+      const radius = parseFloat(radiusStr);
+
+      if (isNaN(lat) || isNaN(lng) || isNaN(radius)) {
+        return NextResponse.json({ error: "Invalid lat, lng or radius parameters" }, { status: 400 });
+      }
+
+      popups = allPopups.filter(popup => {
+        const distance = getDistance(lat, lng, popup.lat, popup.lng);
+        return distance <= radius;
+      });
+    }
 
     return NextResponse.json({ popups });
   } catch (error) {
