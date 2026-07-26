@@ -13,12 +13,14 @@ interface SidebarProps {
   onCategoryChange: (category: string) => void;
   sortBy: string;
   onSortChange: (sort: string) => void;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
   onSelectPopup: (popup: Popup) => void;
   onOpenSubmissionForm: () => void;
   highlightedPopupId?: string | null;
 }
 
-export function Sidebar({ popups, category, onCategoryChange, sortBy, onSortChange, onSelectPopup, onOpenSubmissionForm, highlightedPopupId }: SidebarProps) {
+export function Sidebar({ popups, category, onCategoryChange, sortBy, onSortChange, searchQuery, onSearchChange, onSelectPopup, onOpenSubmissionForm, highlightedPopupId }: SidebarProps) {
 
   const newCount = popups.filter(p => {
     if (!p.startDate) return false;
@@ -72,7 +74,13 @@ export function Sidebar({ popups, category, onCategoryChange, sortBy, onSortChan
       <div className="px-5 pt-4">
         <div className="flex items-center gap-2 border-2 border-ink px-3 py-2.5">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" placeholder="브랜드 또는 지역 검색" className="w-full bg-transparent outline-none text-sm font-medium placeholder:text-neutral-400" />
+          <input 
+            type="text" 
+            placeholder="브랜드 또는 지역 검색" 
+            className="w-full bg-transparent outline-none text-sm font-medium placeholder:text-neutral-400" 
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+          />
         </div>
       </div>
 
@@ -105,6 +113,11 @@ export function Sidebar({ popups, category, onCategoryChange, sortBy, onSortChan
             isHighlighted={highlightedPopupId === popup.id}
           />
         ))}
+        {popups.length === 0 && (
+          <div className="text-center py-10 text-sm font-bold text-neutral-500">
+            검색 결과가 없습니다.
+          </div>
+        )}
       </div>
 
       {/* CTA */}

@@ -12,6 +12,8 @@ interface MobileSheetProps {
   onCategoryChange: (category: string) => void;
   sortBy: string;
   onSortChange: (sort: string) => void;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
   onSelectPopup: (popup: Popup) => void;
   onOpenSubmissionForm: () => void;
   highlightedPopupId?: string | null;
@@ -19,7 +21,7 @@ interface MobileSheetProps {
   onExpandedChange?: (expanded: boolean) => void;
 }
 
-export function MobileSheet({ popups, category, onCategoryChange, sortBy, onSortChange, onSelectPopup, onOpenSubmissionForm, highlightedPopupId, isExpanded = false, onExpandedChange }: MobileSheetProps) {
+export function MobileSheet({ popups, category, onCategoryChange, sortBy, onSortChange, searchQuery, onSearchChange, onSelectPopup, onOpenSubmissionForm, highlightedPopupId, isExpanded = false, onExpandedChange }: MobileSheetProps) {
   const [dragHeight, setDragHeight] = useState<number | null>(null);
   const startYRef = useRef<number>(0);
   const startHeightRef = useRef<number>(0);
@@ -27,7 +29,7 @@ export function MobileSheet({ popups, category, onCategoryChange, sortBy, onSort
 
   const handleTouchStart = (e: React.TouchEvent) => {
     startYRef.current = e.touches[0].clientY;
-    startHeightRef.current = isExpanded ? window.innerHeight * 0.7 : window.innerHeight * 0.18;
+    startHeightRef.current = isExpanded ? window.innerHeight * 0.7 : window.innerHeight * 0.25;
     setDragHeight(startHeightRef.current);
     isDraggingRef.current = false;
   };
@@ -41,7 +43,7 @@ export function MobileSheet({ popups, category, onCategoryChange, sortBy, onSort
     }
 
     const newHeight = startHeightRef.current + deltaY;
-    const minHeight = window.innerHeight * 0.18;
+    const minHeight = window.innerHeight * 0.25;
     const maxHeight = window.innerHeight * 0.70;
     
     setDragHeight(Math.max(minHeight, Math.min(newHeight, maxHeight)));
@@ -69,7 +71,7 @@ export function MobileSheet({ popups, category, onCategoryChange, sortBy, onSort
     return diffDays >= 0 && diffDays <= 1;
   }).length;
 
-  const currentHeight = dragHeight !== null ? `${dragHeight}px` : (isExpanded ? '70%' : '18%');
+  const currentHeight = dragHeight !== null ? `${dragHeight}px` : (isExpanded ? '70%' : '25%');
 
   return (
     <div 
@@ -99,6 +101,20 @@ export function MobileSheet({ popups, category, onCategoryChange, sortBy, onSort
         </div>
       </div>
       
+      {/* Search */}
+      <div className="px-4 pb-3 shrink-0">
+        <div className="flex items-center gap-2 border-2 border-ink px-3 py-2 bg-white">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input 
+            type="text" 
+            placeholder="브랜드 또는 지역 검색" 
+            className="w-full bg-transparent outline-none text-xs font-bold placeholder:text-neutral-400"
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+          />
+        </div>
+      </div>
+
       <div className="px-4 pb-2 flex gap-2 overflow-x-auto scrollbar-hide shrink-0">
         {CATEGORIES.map(cat => (
           <button
@@ -134,7 +150,7 @@ export function MobileSheet({ popups, category, onCategoryChange, sortBy, onSort
         ))}
         {popups.length === 0 && (
           <div className="text-center py-10 text-sm font-bold text-neutral-500">
-            주변에 열려있는 팝업이 없습니다.
+            {searchQuery ? '검색 결과가 없습니다.' : '주변에 열려있는 팝업이 없습니다.'}
           </div>
         )}
 

@@ -12,6 +12,7 @@ export default function Home() {
   const [popups, setPopups] = useState<Popup[]>([]);
   const [category, setCategory] = useState('');
   const [sortBy, setSortBy] = useState('deadline'); // 'deadline' | 'new' | 'popular'
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedPopup, setSelectedPopup] = useState<Popup | null>(null);
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
   const [highlightedPopupId, setHighlightedPopupId] = useState<string | null>(null);
@@ -90,6 +91,13 @@ export default function Home() {
       return (b.viewCount || 0) - (a.viewCount || 0);
     }
     return 0;
+  }).filter(popup => {
+    if (!searchQuery) return true;
+    const lowerQuery = searchQuery.toLowerCase();
+    return (
+      (popup.name?.toLowerCase().includes(lowerQuery)) ||
+      (popup.address?.toLowerCase().includes(lowerQuery))
+    );
   });
 
   const handleSelectPopup = (popup: Popup, action: 'select' | 'showOnMap' = 'select') => {
@@ -107,6 +115,7 @@ export default function Home() {
       <Sidebar 
         popups={sortedPopups} category={category} onCategoryChange={setCategory} 
         sortBy={sortBy} onSortChange={setSortBy}
+        searchQuery={searchQuery} onSearchChange={setSearchQuery}
         onSelectPopup={handleSelectPopup} 
         onOpenSubmissionForm={() => setShowSubmissionForm(true)}
         highlightedPopupId={highlightedPopupId}
@@ -114,6 +123,7 @@ export default function Home() {
       <MobileSheet 
         popups={sortedPopups} category={category} onCategoryChange={setCategory} 
         sortBy={sortBy} onSortChange={setSortBy}
+        searchQuery={searchQuery} onSearchChange={setSearchQuery}
         onSelectPopup={handleSelectPopup} 
         onOpenSubmissionForm={() => setShowSubmissionForm(true)}
         highlightedPopupId={highlightedPopupId}
