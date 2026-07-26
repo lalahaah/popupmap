@@ -19,8 +19,24 @@ const body = Noto_Sans_KR({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://popupmap-blush.vercel.app'),
   title: "팝업맵 — 지금 열려있는 팝업만",
-  description: "전국 팝업스토어 오픈/마감 일정을 지도로 확인하세요.",
+  description: "서울 팝업스토어 오픈/마감 일정을 지도에서 확인하세요.",
+  openGraph: {
+    title: "팝업맵 — 지금 열려있는 팝업만",
+    description: "서울 팝업스토어 오픈/마감 일정을 지도에서 확인하세요.",
+    images: ['/og-image.png'],
+    url: 'https://popupmap-blush.vercel.app',
+    siteName: "팝업맵",
+    locale: 'ko_KR',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "팝업맵 — 지금 열려있는 팝업만",
+    description: "서울 팝업스토어 오픈/마감 일정을 지도에서 확인하세요.",
+    images: ['/og-image.png'],
+  },
 };
 
 export default function RootLayout({
