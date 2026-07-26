@@ -35,6 +35,9 @@ export default function AdminPopupForm({
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   
+  const [uploadingCard, setUploadingCard] = useState(false);
+  const [uploadingDetail, setUploadingDetail] = useState(false);
+  
   const [formData, setFormData] = useState<PopupFormData>({
     name: initialData?.name || '',
     brand: initialData?.brand || '',
@@ -56,6 +59,35 @@ export default function AdminPopupForm({
       setFormData({ ...formData, [name]: (e.target as HTMLInputElement).checked });
     } else {
       setFormData({ ...formData, [name]: value });
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: 'cardImage' | 'detailImage') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (fieldName === 'cardImage') setUploadingCard(true);
+    else setUploadingDetail(true);
+
+    const uploadForm = new FormData();
+    uploadForm.append('file', file);
+
+    try {
+      const res = await fetch('/api/admin/upload', {
+        method: 'POST',
+        body: uploadForm,
+      });
+      const data = await res.json();
+      
+      if (!res.ok) throw new Error(data.error || 'Upload failed');
+      
+      setFormData(prev => ({ ...prev, [fieldName]: data.url }));
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      if (fieldName === 'cardImage') setUploadingCard(false);
+      else setUploadingDetail(false);
+      e.target.value = '';
     }
   };
 
@@ -129,11 +161,23 @@ export default function AdminPopupForm({
         </div>
         <div className="col-span-2">
           <label className="block text-xs font-bold mb-1">카드 이미지 (정사각형 권장, 400×400px, 500KB 이하)</label>
-          <input name="cardImage" value={formData.cardImage} onChange={handleChange} placeholder="http://..." className="w-full p-2 border-2 border-ink text-sm" />
+          <div className="flex gap-2">
+            <input name="cardImage" value={formData.cardImage} onChange={handleChange} placeholder="http://..." className="flex-1 p-2 border-2 border-ink text-sm" />
+            <label className="cursor-pointer bg-neutral-200 border-2 border-ink px-4 py-2 text-sm font-bold flex items-center hover:bg-neutral-300 transition-colors shrink-0">
+              {uploadingCard ? '업로드 중...' : '파일 업로드'}
+              <input type="file" accept="image/jpeg, image/png, image/webp" className="hidden" onChange={(e) => handleFileUpload(e, 'cardImage')} disabled={uploadingCard} />
+            </label>
+          </div>
         </div>
         <div className="col-span-2">
           <label className="block text-xs font-bold mb-1">상세페이지 이미지 (가로형 권장, 800×500px, 500KB 이하)</label>
-          <input name="detailImage" value={formData.detailImage} onChange={handleChange} placeholder="http://..." className="w-full p-2 border-2 border-ink text-sm" />
+          <div className="flex gap-2">
+            <input name="detailImage" value={formData.detailImage} onChange={handleChange} placeholder="http://..." className="flex-1 p-2 border-2 border-ink text-sm" />
+            <label className="cursor-pointer bg-neutral-200 border-2 border-ink px-4 py-2 text-sm font-bold flex items-center hover:bg-neutral-300 transition-colors shrink-0">
+              {uploadingDetail ? '업로드 중...' : '파일 업로드'}
+              <input type="file" accept="image/jpeg, image/png, image/webp" className="hidden" onChange={(e) => handleFileUpload(e, 'detailImage')} disabled={uploadingDetail} />
+            </label>
+          </div>
         </div>
         <div className="col-span-2 flex items-center gap-2 mt-2">
           <input type="checkbox" name="isSponsored" checked={formData.isSponsored} onChange={handleChange} id="sponsor" className="w-4 h-4" />
