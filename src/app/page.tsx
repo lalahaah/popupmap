@@ -58,17 +58,14 @@ export default function Home() {
     return 0;
   });
 
-  const handleSelectPopup = (popup: Popup) => {
-    setSelectedPopup(popup);
+  const handleSelectPopup = (popup: Popup, action: 'select' | 'showOnMap' = 'select') => {
     setHighlightedPopupId(popup.id);
-  };
-
-  const handleShowOnMap = () => {
-    if (selectedPopup) {
-      setHighlightedPopupId(selectedPopup.id);
+    if (action === 'showOnMap') {
+      setSelectedPopup(null);
+      setIsSheetExpanded(false);
+    } else {
+      setSelectedPopup(popup);
     }
-    setSelectedPopup(null);
-    setIsSheetExpanded(false);
   };
 
   return (
@@ -113,7 +110,7 @@ export default function Home() {
         <PopupDetail 
           popup={selectedPopup} 
           onClose={() => setSelectedPopup(null)} 
-          onShowOnMap={handleShowOnMap}
+          onShowOnMap={() => handleSelectPopup(selectedPopup, 'showOnMap')}
         />
       )}
 
