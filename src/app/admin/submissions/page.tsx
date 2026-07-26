@@ -2,6 +2,8 @@ import { prisma } from '@/lib/prisma';
 import SubmissionsClient from './SubmissionsClient';
 
 // Server Component
+export const dynamic = 'force-dynamic';
+
 export default async function AdminSubmissionsPage() {
   const pendingSubmissions = await prisma.submission.findMany({
     where: { status: 'pending' },

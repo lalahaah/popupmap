@@ -42,6 +42,13 @@ export default function Home() {
   }, [category]);
 
   const sortedPopups = [...popups].sort((a, b) => {
+    // 1순위: 상태 (ended는 무조건 맨 아래)
+    const aIsEnded = a.status === 'ended';
+    const bIsEnded = b.status === 'ended';
+    if (aIsEnded && !bIsEnded) return 1;
+    if (!aIsEnded && bIsEnded) return -1;
+
+    // 2순위: 기존 정렬 로직
     if (sortBy === 'deadline') {
       if (!a.endDate) return 1;
       if (!b.endDate) return -1;

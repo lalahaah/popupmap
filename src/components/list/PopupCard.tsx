@@ -81,11 +81,13 @@ export function PopupCard({ popup, onClick, isHighlighted }: { popup: Popup; onC
       ? `~ ${formatMonthDay(popup.endDate)}` 
       : '상시운영';
 
+  const isEnded = popup.status === 'ended';
+
   return (
     <div 
       ref={cardRef}
       onClick={onClick}
-      className={`card-border p-3 flex gap-3 cursor-pointer transition-all border-2 shadow-[4px_4px_0_theme(colors.ink)] hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[6px_6px_0_theme(colors.ink)] ${isHighlighted ? 'bg-brandYellow/20 border-brandRed' : 'bg-card border-ink'}`}
+      className={`card-border p-3 flex gap-3 cursor-pointer transition-all border-2 shadow-[4px_4px_0_theme(colors.ink)] hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[6px_6px_0_theme(colors.ink)] ${isHighlighted ? 'bg-brandYellow/20 border-brandRed' : 'bg-card border-ink'} ${isEnded ? 'opacity-50 grayscale' : ''}`}
     >
       <div className="relative w-20 h-20 shrink-0 bg-neutral-200 border-2 border-ink overflow-hidden">
         {popup.images && popup.images.length > 0 ? (
@@ -93,8 +95,8 @@ export function PopupCard({ popup, onClick, isHighlighted }: { popup: Popup; onC
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-brandBlue to-brandRed"></div>
         )}
-        <div className={`absolute -top-1 -left-1 stub px-1.5 py-0.5 text-[10px] font-mono ${isNew ? 'bg-brandRed !text-white' : ''}`}>
-          {dDayText}
+        <div className={`absolute -top-1 -left-1 stub px-1.5 py-0.5 text-[10px] font-mono ${isEnded ? 'bg-gray-400 text-white' : isNew ? 'bg-brandRed !text-white' : ''}`}>
+          {isEnded ? '종료' : dDayText}
         </div>
       </div>
       <div className="flex-1 min-w-0">
@@ -102,7 +104,7 @@ export function PopupCard({ popup, onClick, isHighlighted }: { popup: Popup; onC
           <span className={`text-[10px] font-bold px-1.5 py-0.5 border border-ink ${categoryBg}`}>
             {categoryLabels[popup.category] || '기타'}
           </span>
-          {isClosingSoon && (
+          {isClosingSoon && !isEnded && (
             <span className="text-[10px] font-bold text-brandRed">마감임박</span>
           )}
         </div>

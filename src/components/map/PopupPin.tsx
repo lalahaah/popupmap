@@ -36,14 +36,20 @@ export function getPopupPinHtml(popup: Popup, isHighlighted: boolean = false): s
 
   if (!dDayText) dDayText = 'D-?';
 
-  let bgClass = isNew ? 'bg-brandRed !text-white' : 'bg-paper text-ink';
-  if (isHighlighted) {
+  const isEnded = popup.status === 'ended';
+  if (isEnded) dDayText = 'END';
+
+  let bgClass = isNew && !isEnded ? 'bg-brandRed !text-white' : 'bg-paper text-ink';
+  if (isHighlighted && !isEnded) {
     bgClass = 'bg-brandRed !text-white';
+  }
+  if (isEnded) {
+    bgClass = 'bg-gray-400 text-white border-gray-500';
   }
 
   const highlightClass = isHighlighted
-    ? 'scale-125 border-brandRed z-[100] shadow-[4px_4px_0_theme(colors.ink)] animate-[bounce_1s_infinite]'
-    : 'border-ink shadow-[2px_2px_0_theme(colors.ink)] z-10';
+    ? `scale-125 z-[100] shadow-[4px_4px_0_theme(colors.ink)] animate-[bounce_1s_infinite] ${isEnded ? 'border-gray-600' : 'border-brandRed'}`
+    : `shadow-[2px_2px_0_theme(colors.ink)] z-10 ${isEnded ? 'border-gray-500 opacity-75' : 'border-ink'}`;
 
   return `
     <div class="relative cursor-pointer transition-all duration-300 ${isHighlighted ? '-translate-y-2 z-[100]' : 'hover:-translate-y-1'}" title="${popup.name}">
