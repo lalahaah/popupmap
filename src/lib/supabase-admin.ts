@@ -4,11 +4,13 @@ import { createClient } from '@supabase/supabase-js';
 // 절대 클라이언트 컴포넌트나 공개 API 라우트에서 사용하지 마세요.
 // 서버 환경(예: 관리자 전용 API 라우트, 서버 액션)에서만 사용해야 합니다.
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+export const getSupabaseAdmin = () => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  throw new Error('Supabase URL or Service Key is missing');
-}
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Supabase URL or Service Key is missing');
+  }
 
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+  return createClient(supabaseUrl, supabaseServiceKey);
+};
