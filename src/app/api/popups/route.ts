@@ -3,17 +3,19 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { calculatePopupStatus } from "@/lib/status";
+import { geocode } from "@/lib/geocode";
 
 export const dynamic = 'force-dynamic';
 
 const popupSchema = z.object({
   name: z.string(),
   brandId: z.string().optional(),
+  brand: z.string().optional(),
   description: z.string().optional(),
   category: z.enum(["FASHION", "BEAUTY", "FOOD", "GOODS", "EXHIBIT", "ETC"]),
   address: z.string(),
-  lat: z.number(),
-  lng: z.number(),
+  lat: z.number().optional(),
+  lng: z.number().optional(),
   startDate: z.string().transform((str) => new Date(str)),
   endDate: z.string().optional().transform((str) => str ? new Date(str) : undefined),
   status: z.enum(["upcoming", "ongoing", "ended"]).default("upcoming"),
@@ -36,9 +38,43 @@ export async function POST(req: Request) {
 
     const status = calculatePopupStatus(parsedData.startDate, parsedData.endDate);
 
+    let lat = parsedData.lat;
+    let lng = parsedData.lng;
+
+    if (lat === undefined || lng === undefined) {
+      const coords = await geocode(parsedData.address);
+      if (!coords) {
+        return NextResponse.json({ error: "주소의 위도/경도를 찾을 수 없습니다. 정확한 주소를 입력해주세요." }, { status: 400 });
+      }
+      lat = coords.lat;
+      lng = coords.lng;
+    }
+
+    // Brand upsert (since POST /api/popups takes brandId, but AdminPopupForm provides brand string)
+    // Wait, AdminPopupForm provides `brand` as a string, but POST /api/popups expects `brandId`.
+    // Let's modify POST /api/popups to accept `brand` string and upsert it, just like PATCH does.
+    let brandId = parsedData.brandId;
+    if ((parsedData as any).brand && !brandId) {
+      const brandName = (parsedData as any).brand;
+      let brand = await prisma.brand.findFirst({
+        where: { name: brandName },
+      });
+      if (!brand) {
+        brand = await prisma.brand.create({
+          data: { name: brandName },
+        });
+      }
+      brandId = brand.id;
+    }
+
+    const { brand: _brand, ...dataForPopup } = parsedData;
+
     const popup = await prisma.popup.create({
       data: {
-        ...parsedData,
+        ...dataForPopup,
+        lat: lat!,
+        lng: lng!,
+        brandId: brandId,
         status: status,
       }
     });
