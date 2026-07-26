@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { FilterChips } from '../list/FilterChips';
 import { PopupCard } from '../list/PopupCard';
 import { Popup } from '@/types/popup';
@@ -45,7 +46,10 @@ export function Sidebar({ popups, category, onCategoryChange, sortBy, onSortChan
       <div className="p-5 border-b-2 border-ink">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-display text-2xl tracking-tight">POPUP MAP</h1>
+            <div className="flex items-center gap-2">
+              <Image src="/logo.svg" alt="Logo" width={32} height={32} />
+              <h1 className="font-display text-2xl tracking-tight">POPUP MAP</h1>
+            </div>
             <p className="text-xs font-bold mt-1 text-neutral-500">지금 진짜 열려있는 팝업만</p>
           </div>
           <div className="stub px-3 py-2 text-xs font-mono font-bold">D+0</div>

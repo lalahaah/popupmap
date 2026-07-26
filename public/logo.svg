@@ -1,0 +1,20 @@
+<svg width="400" height="460" viewBox="-50 -35 100 95" xmlns="http://www.w3.org/2000/svg">
+  <!-- MAIN PIN BODY - 단색 brandRed -->
+  <path
+    d="M 0 50
+       C -40 10, -40 -30, 0 -30
+       C 40 -30, 40 10, 0 50 Z"
+    fill="#FF3D57"
+  />
+
+  <!-- INNER CIRCLE -->
+  <circle cx="0" cy="-5" r="14" fill="#FFFFFF" />
+  <circle cx="0" cy="-5" r="14" fill="none" stroke="#FFC700" stroke-width="6" />
+
+  <!-- HORIZONTAL BAND -->
+  <rect x="-32" y="-8" width="64" height="6" fill="#FFC700" rx="2" />
+
+  <!-- 밴드가 원 안쪽을 덮지 않도록 재차 흰 원 + 링 오버레이 -->
+  <circle cx="0" cy="-5" r="12" fill="#FFFFFF" />
+  <circle cx="0" cy="-5" r="12" fill="none" stroke="#FFC700" stroke-width="3" />
+</svg>

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
+import Image from 'next/image';
 import { PopupCard } from '../list/PopupCard';
 import { Popup } from '@/types/popup';
 import { CATEGORIES, SORT_TABS } from '@/lib/constants';
@@ -90,7 +91,10 @@ export function MobileSheet({ popups, category, onCategoryChange, sortBy, onSort
         </div>
         
         <div className="px-4 pb-3 flex items-center justify-between">
-          <h1 className="font-display text-xl tracking-tight">POPUP MAP</h1>
+          <div className="flex items-center gap-2">
+            <Image src="/logo.svg" alt="Logo" width={28} height={28} />
+            <h1 className="font-display text-xl tracking-tight">POPUP MAP</h1>
+          </div>
           <div className="stub px-2 py-1 text-[10px] font-mono font-bold">오늘 {newCount}곳 NEW</div>
         </div>
       </div>
