@@ -128,11 +128,11 @@ export default function AdminPopupForm({
           <input name="sourceUrl" value={formData.sourceUrl} onChange={handleChange} placeholder="http://..." className="w-full p-2 border-2 border-ink text-sm" />
         </div>
         <div className="col-span-2">
-          <label className="block text-xs font-bold mb-1">카드 이미지 (정사각형 권장, 400×400px)</label>
+          <label className="block text-xs font-bold mb-1">카드 이미지 (정사각형 권장, 400×400px, 500KB 이하)</label>
           <input name="cardImage" value={formData.cardImage} onChange={handleChange} placeholder="http://..." className="w-full p-2 border-2 border-ink text-sm" />
         </div>
         <div className="col-span-2">
-          <label className="block text-xs font-bold mb-1">상세페이지 이미지 (가로형 권장, 800×500px)</label>
+          <label className="block text-xs font-bold mb-1">상세페이지 이미지 (가로형 권장, 800×500px, 500KB 이하)</label>
           <input name="detailImage" value={formData.detailImage} onChange={handleChange} placeholder="http://..." className="w-full p-2 border-2 border-ink text-sm" />
         </div>
         <div className="col-span-2 flex items-center gap-2 mt-2">
