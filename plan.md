@@ -165,7 +165,8 @@ enum SubStatus { pending approved rejected }
 - [x] **STEP J-2** — 사이드바-지도-상세팝업 상호 연동 완료
 - [x] **STEP J-3** — 카드/핀 클릭 하이라이트 연동 통일 + 시각 개선 완료
 - [x] **STEP J-4** — 상세팝업 배경 블러 제거, 지도 반응 동시 노출 완료
-- [ ] **STEP K** — `status.ts` 배치 로직 → Vercel Cron 1일 1회 등록 (upcoming/ongoing/ended 자동 갱신)
+- [x] **STEP K** — `status.ts` 배치 로직 → Vercel Cron 1일 1회 등록 (upcoming/ongoing/ended 자동 갱신)
+- [x] **STEP K-1** — 종료 팝업 시각적 구분 (지도 회색 핀, 리스트 하단 정렬+회색 처리) 완료
 - [ ] **STEP L** — Vercel 배포, 도메인 연결, 최종 QA
 
 각 STEP 완료 시 git commit 포함해서 다음 STEP으로. STEP 단위를 벗어나는 범위 확장(회원가입, 결제, 좋아요 등)은 이 문서에 없으므로 실행하지 않음 — 필요하면 plan.md에 먼저 추가 후 진행.
