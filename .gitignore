@@ -35,3 +35,7 @@ yarn-error.log*
 
 # vercel
 .vercel
+
+# Ignore specific files
+popup info.png
+next-env.d.ts
