@@ -1,0 +1,9 @@
+{
+  "_comment": "schedule '15 15 * * *' is 15:15 UTC, which is 00:15 KST. UTC is 9 hours behind KST.",
+  "crons": [
+    {
+      "path": "/api/cron/update-status",
+      "schedule": "15 15 * * *"
+    }
+  ]
+}

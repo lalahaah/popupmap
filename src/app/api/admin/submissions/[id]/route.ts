@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { calculatePopupStatus } from '@/lib/status';
 
 const approveSchema = z.object({
   action: z.literal('approve'),
@@ -121,6 +122,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     }
 
     // Popup 생성
+    const status = calculatePopupStatus(editedData.startDate, editedData.endDate);
+
     const popup = await prisma.popup.create({
       data: {
         name: editedData.name,
@@ -132,6 +135,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         lng: coords.lng,
         startDate: editedData.startDate,
         endDate: editedData.endDate,
+        status: status,
         sourceType: editedData.sourceType,
         sourceUrl: editedData.sourceUrl,
         images: editedData.images,

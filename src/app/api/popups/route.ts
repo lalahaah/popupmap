@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { calculatePopupStatus } from "@/lib/status";
 
 const popupSchema = z.object({
   name: z.string(),
@@ -31,8 +32,13 @@ export async function POST(req: Request) {
     const body = await req.json();
     const parsedData = popupSchema.parse(body);
 
+    const status = calculatePopupStatus(parsedData.startDate, parsedData.endDate);
+
     const popup = await prisma.popup.create({
-      data: parsedData,
+      data: {
+        ...parsedData,
+        status: status,
+      }
     });
 
     return NextResponse.json(popup, { status: 201 });
