@@ -15,9 +15,11 @@ interface KakaoMapProps {
   popups: Popup[];
   onSelectPopup?: (popup: Popup) => void;
   highlightedPopupId?: string | null;
+  mapCenter?: { lat: number; lng: number };
+  onMapMoved?: (lat: number, lng: number) => void;
 }
 
-export function KakaoMap({ popups, onSelectPopup, highlightedPopupId }: KakaoMapProps) {
+export function KakaoMap({ popups, onSelectPopup, highlightedPopupId, mapCenter, onMapMoved }: KakaoMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<any>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -46,11 +48,19 @@ export function KakaoMap({ popups, onSelectPopup, highlightedPopupId }: KakaoMap
             console.log(`지도 생성 완료, 컨테이너 크기: ${width}x${height}`);
             
             const options = {
-              center: new window.kakao.maps.LatLng(37.544, 127.055), // 성수동 중심
+              center: new window.kakao.maps.LatLng(mapCenter?.lat || 37.544, mapCenter?.lng || 127.055), // 기본 성수동 중심
               level: 5,
             };
             
             const newMap = new window.kakao.maps.Map(mapRef.current, options);
+            
+            window.kakao.maps.event.addListener(newMap, 'dragend', () => {
+              if (onMapMoved) {
+                const center = newMap.getCenter();
+                onMapMoved(center.getLat(), center.getLng());
+              }
+            });
+
             mapInstanceRef.current = newMap;
             setMap(newMap);
           }
@@ -123,7 +133,14 @@ export function KakaoMap({ popups, onSelectPopup, highlightedPopupId }: KakaoMap
       const position = new window.kakao.maps.LatLng(highlightedItem.popup.lat, highlightedItem.popup.lng);
       map.panTo(position);
     }
-  }, [highlightedPopupId]);
+  }, [highlightedPopupId, map]);
+
+  useEffect(() => {
+    if (map && mapCenter) {
+      const position = new window.kakao.maps.LatLng(mapCenter.lat, mapCenter.lng);
+      map.panTo(position);
+    }
+  }, [mapCenter, map]);
 
   return (
     <div ref={mapRef} className="w-full h-full" style={{ width: '100%', height: '100%' }} />
