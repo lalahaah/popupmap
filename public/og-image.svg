@@ -9,10 +9,12 @@
     <circle cx="1000" cy="500" r="2"/><circle cx="1060" cy="500" r="2"/><circle cx="1120" cy="500" r="2"/>
     <circle cx="1000" cy="560" r="2"/><circle cx="1060" cy="560" r="2"/><circle cx="1120" cy="560" r="2"/>
     <circle cx="1000" cy="440" r="2"/><circle cx="1060" cy="440" r="2"/><circle cx="1120" cy="440" r="2"/>
+    <circle cx="1000" cy="130" r="2"/><circle cx="1060" cy="130" r="2"/><circle cx="1120" cy="130" r="2"/>
+    <circle cx="1000" cy="70" r="2"/><circle cx="1060" cy="70" r="2"/><circle cx="1120" cy="70" r="2"/>
   </g>
 
-  <!-- 좌측 큰 핀 로고 -->
-  <g transform="translate(195, 315) scale(2.6)">
+  <!-- 좌측 큰 핀 로고 (세로 중앙 정렬) -->
+  <g transform="translate(230, 315) scale(3.6)">
     <path
       d="M 0 50 C -40 10, -40 -30, 0 -30 C 40 -30, 40 10, 0 50 Z"
       fill="#FF3D57"
@@ -24,26 +26,6 @@
     <circle cx="0" cy="-5" r="12" fill="none" stroke="#FFC700" stroke-width="3" />
   </g>
 
-  <!-- 타이틀 (사이트에서 쓰는 Archivo Black) -->
-  <text x="420" y="300" font-family="Archivo Black" font-size="92" fill="#16171B" letter-spacing="-2">POPUP MAP</text>
-
-  <!-- 서브타이틀 -->
-  <text x="424" y="362" font-family="Archivo Black" font-size="42" fill="#FF3D57" letter-spacing="-1">POP!! UP!!</text>
-  <text x="424" y="415" font-family="Noto Sans CJK KR" font-weight="500" font-size="26" fill="#57534E">팝업스토어를 지도 위에서 한눈에</text>
-
-  <!-- 장식용 D-day 티켓 배지 -->
-  <g transform="translate(424, 460)">
-    <rect x="0" y="0" width="76" height="40" rx="0" fill="#16171B"/>
-    <circle cx="76" cy="20" r="6" fill="#FAFAF7"/>
-    <text x="14" y="27" font-family="monospace" font-weight="700" font-size="20" fill="#FAFAF7">D-2</text>
-  </g>
-  <g transform="translate(516, 460)">
-    <rect x="0" y="0" width="76" height="40" rx="0" fill="#FF3D57"/>
-    <circle cx="76" cy="20" r="6" fill="#FAFAF7"/>
-    <text x="10" y="27" font-family="monospace" font-weight="700" font-size="18" fill="#FAFAF7">NEW</text>
-  </g>
-  <g transform="translate(608, 460)">
-    <rect x="0" y="0" width="90" height="40" fill="#FFC700"/>
-    <text x="14" y="27" font-family="Noto Sans CJK KR" font-weight="700" font-size="18" fill="#16171B">뷰티</text>
-  </g>
+  <!-- 타이틀 (핀과 세로 중앙 정렬) -->
+  <text x="440" y="380" font-family="Archivo Black" font-size="100" fill="#16171B" letter-spacing="-2">POPUP MAP</text>
 </svg>
