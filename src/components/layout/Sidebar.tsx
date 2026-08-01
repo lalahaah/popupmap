@@ -18,9 +18,11 @@ interface SidebarProps {
   onSelectPopup: (popup: Popup) => void;
   onOpenSubmissionForm: () => void;
   highlightedPopupId?: string | null;
+  showEnded: boolean;
+  onShowEndedChange: (show: boolean) => void;
 }
 
-export function Sidebar({ popups, category, onCategoryChange, sortBy, onSortChange, searchQuery, onSearchChange, onSelectPopup, onOpenSubmissionForm, highlightedPopupId }: SidebarProps) {
+export function Sidebar({ popups, category, onCategoryChange, sortBy, onSortChange, searchQuery, onSearchChange, onSelectPopup, onOpenSubmissionForm, highlightedPopupId, showEnded, onShowEndedChange }: SidebarProps) {
 
   const newCount = popups.filter(p => {
     if (!p.startDate) return false;
@@ -100,7 +102,18 @@ export function Sidebar({ popups, category, onCategoryChange, sortBy, onSortChan
             </button>
           ))}
         </div>
-        <span className="text-xs font-mono font-bold text-neutral-500">지도 내 {popups.length}곳</span>
+        <div className="flex items-center gap-3">
+          <label className="flex items-center gap-1.5 cursor-pointer">
+            <input 
+              type="checkbox" 
+              className="w-3.5 h-3.5 accent-ink cursor-pointer"
+              checked={showEnded}
+              onChange={(e) => onShowEndedChange(e.target.checked)}
+            />
+            <span className="text-xs font-bold text-neutral-500">지난 팝업 보기</span>
+          </label>
+          <span className="text-xs font-mono font-bold text-neutral-500">({popups.length}곳)</span>
+        </div>
       </div>
 
       {/* List */}

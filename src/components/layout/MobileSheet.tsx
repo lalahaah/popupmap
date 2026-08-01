@@ -19,9 +19,11 @@ interface MobileSheetProps {
   highlightedPopupId?: string | null;
   isExpanded?: boolean;
   onExpandedChange?: (expanded: boolean) => void;
+  showEnded: boolean;
+  onShowEndedChange: (show: boolean) => void;
 }
 
-export function MobileSheet({ popups, category, onCategoryChange, sortBy, onSortChange, searchQuery, onSearchChange, onSelectPopup, onOpenSubmissionForm, highlightedPopupId, isExpanded = false, onExpandedChange }: MobileSheetProps) {
+export function MobileSheet({ popups, category, onCategoryChange, sortBy, onSortChange, searchQuery, onSearchChange, onSelectPopup, onOpenSubmissionForm, highlightedPopupId, isExpanded = false, onExpandedChange, showEnded, onShowEndedChange }: MobileSheetProps) {
   const [dragHeight, setDragHeight] = useState<number | null>(null);
   const startYRef = useRef<number>(0);
   const startHeightRef = useRef<number>(0);
@@ -127,16 +129,27 @@ export function MobileSheet({ popups, category, onCategoryChange, sortBy, onSort
         ))}
       </div>
 
-      <div className="px-4 py-2 border-b-2 border-ink flex gap-4 text-xs font-bold shrink-0">
-        {SORT_TABS.map(tab => (
-          <button
-            key={tab.value}
-            onClick={() => onSortChange(tab.value)}
-            className={`${sortBy === tab.value ? 'text-brandRed underline decoration-2 underline-offset-4' : 'text-neutral-400'}`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="px-4 py-2 border-b-2 border-ink flex items-center justify-between shrink-0">
+        <div className="flex gap-4 text-xs font-bold">
+          {SORT_TABS.map(tab => (
+            <button
+              key={tab.value}
+              onClick={() => onSortChange(tab.value)}
+              className={`${sortBy === tab.value ? 'text-brandRed underline decoration-2 underline-offset-4' : 'text-neutral-400'}`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        <label className="flex items-center gap-1.5 cursor-pointer">
+          <input 
+            type="checkbox" 
+            className="w-3.5 h-3.5 accent-ink cursor-pointer"
+            checked={showEnded}
+            onChange={(e) => onShowEndedChange(e.target.checked)}
+          />
+          <span className="text-xs font-bold text-neutral-500">지난 팝업 보기</span>
+        </label>
       </div>
       
       <div className="flex-1 overflow-y-auto scrollbar-hide px-4 py-2 space-y-3 bg-paper">

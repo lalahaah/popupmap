@@ -120,7 +120,13 @@ export async function GET(req: Request) {
     where.category = category;
   }
   if (status) {
-    where.status = status;
+    if (status !== 'all') {
+      where.status = status;
+    }
+  } else {
+    if (!q) {
+      where.status = { not: 'ended' };
+    }
   }
   if (q) {
     where.OR = [

@@ -18,6 +18,7 @@ export default function Home() {
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
   const [highlightedPopupId, setHighlightedPopupId] = useState<string | null>(null);
   const [isSheetExpanded, setIsSheetExpanded] = useState(false);
+  const [showEnded, setShowEnded] = useState<boolean>(false);
 
   const [mapCenter, setMapCenter] = useState({ lat: 37.544, lng: 127.055 });
   const [hasMapMoved, setHasMapMoved] = useState(false);
@@ -40,6 +41,9 @@ export default function Home() {
         : `/api/popups?lat=${mapCenter.lat}&lng=${mapCenter.lng}&radius=${radius}`;
       if (category) {
         url += `&category=${category}`;
+      }
+      if (showEnded && !q) {
+        url += `&status=all`;
       }
       try {
         const res = await fetch(url);
@@ -123,6 +127,8 @@ export default function Home() {
         onSelectPopup={handleSelectPopup} 
         onOpenSubmissionForm={() => setShowSubmissionForm(true)}
         highlightedPopupId={highlightedPopupId}
+        showEnded={showEnded}
+        onShowEndedChange={setShowEnded}
       />
       <MobileSheet 
         popups={sortedPopups} category={category} onCategoryChange={setCategory} 
@@ -133,6 +139,8 @@ export default function Home() {
         highlightedPopupId={highlightedPopupId}
         isExpanded={isSheetExpanded}
         onExpandedChange={setIsSheetExpanded}
+        showEnded={showEnded}
+        onShowEndedChange={setShowEnded}
       />
       {/* ===================== MAP AREA ===================== */}
       <main className="flex-1 relative h-full min-h-0 min-w-0">
