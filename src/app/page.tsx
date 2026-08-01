@@ -119,7 +119,7 @@ export default function Home() {
   };
 
   return (
-    <div className="relative h-screen w-screen flex">
+    <div className="relative h-screen w-screen flex overflow-hidden">
       <Sidebar 
         popups={sortedPopups} category={category} onCategoryChange={setCategory} 
         sortBy={sortBy} onSortChange={setSortBy}

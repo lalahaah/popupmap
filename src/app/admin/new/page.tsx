@@ -33,7 +33,7 @@ export default function AdminNewPopupPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto p-4 md:p-8">
+    <div className="min-h-screen max-w-3xl mx-auto p-4 md:p-8">
       <h1 className="text-2xl font-bold font-display mb-6 uppercase">신규 팝업 직접 등록</h1>
       <AdminPopupForm 
         onSubmit={handleSubmit}
