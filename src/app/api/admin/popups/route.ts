@@ -28,6 +28,7 @@ export async function GET(req: Request) {
       orderBy: { createdAt: 'desc' },
       include: {
         brand: true,
+        reviews: { orderBy: { createdAt: 'desc' } },
       },
     });
 

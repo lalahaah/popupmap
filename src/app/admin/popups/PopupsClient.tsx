@@ -19,6 +19,7 @@ export default function PopupsClient({ initialPopups }: { initialPopups: any[] }
   const [activeCategory, setActiveCategory] = useState('ALL');
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [expandedReviewId, setExpandedReviewId] = useState<string | null>(null);
 
   const fetchPopups = async (category: string) => {
     setLoading(true);
@@ -58,6 +59,25 @@ export default function PopupsClient({ initialPopups }: { initialPopups: any[] }
     } catch (error) {
       console.error('Failed to delete popup:', error);
       alert('삭제에 실패했습니다.');
+    }
+  };
+
+  const handleDeleteReview = async (reviewId: string, popupId: string) => {
+    if (!confirm('이 리뷰를 삭제하시겠습니까?')) return;
+    try {
+      const res = await fetch(`/api/admin/reviews/${reviewId}`, { method: 'DELETE' });
+      if (res.ok) {
+        setPopups(prev => prev.map(p => {
+          if (p.id === popupId) {
+            return { ...p, reviews: p.reviews?.filter((r: any) => r.id !== reviewId) || [] };
+          }
+          return p;
+        }));
+      } else {
+        alert('리뷰 삭제에 실패했습니다.');
+      }
+    } catch (error) {
+      alert('오류가 발생했습니다.');
     }
   };
 
@@ -150,7 +170,19 @@ export default function PopupsClient({ initialPopups }: { initialPopups: any[] }
                 
                 <div className="flex gap-2">
                   <button 
-                    onClick={() => setEditingId(editingId === popup.id ? null : popup.id)}
+                    onClick={() => {
+                      setExpandedReviewId(expandedReviewId === popup.id ? null : popup.id);
+                      setEditingId(null);
+                    }}
+                    className="px-3 py-1.5 bg-brandYellow border-2 border-ink font-bold text-sm hover:bg-yellow-400 transition-colors"
+                  >
+                    리뷰 관리 ({popup.reviews?.length || 0})
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setEditingId(editingId === popup.id ? null : popup.id);
+                      setExpandedReviewId(null);
+                    }}
                     className="px-3 py-1.5 bg-neutral-100 border-2 border-ink font-bold text-sm hover:bg-neutral-200 transition-colors"
                   >
                     {editingId === popup.id ? '닫기' : '수정'}
@@ -163,6 +195,38 @@ export default function PopupsClient({ initialPopups }: { initialPopups: any[] }
                   </button>
                 </div>
               </div>
+
+              {expandedReviewId === popup.id && (
+                <div className="p-4 bg-neutral-50 border-b-2 border-ink">
+                  <h3 className="font-bold mb-3">리뷰 목록</h3>
+                  {(!popup.reviews || popup.reviews.length === 0) ? (
+                    <p className="text-sm text-neutral-500">작성된 리뷰가 없습니다.</p>
+                  ) : (
+                    <div className="flex flex-col gap-3">
+                      {popup.reviews.map((review: any) => (
+                        <div key={review.id} className="bg-white p-3 border-2 border-ink flex items-start justify-between gap-4">
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-bold text-sm">{review.nickname}</span>
+                              <span className="text-brandYellow text-xs">{'★'.repeat(review.rating)}</span>
+                              <span className="text-xs text-neutral-400 font-mono">
+                                {new Date(review.createdAt).toLocaleString()}
+                              </span>
+                            </div>
+                            <p className="text-sm whitespace-pre-wrap">{review.comment}</p>
+                          </div>
+                          <button 
+                            onClick={() => handleDeleteReview(review.id, popup.id)}
+                            className="shrink-0 px-2 py-1 text-xs font-bold text-brandRed border-2 border-brandRed hover:bg-red-50 transition-colors"
+                          >
+                            삭제
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {editingId === popup.id && (
                 <AdminPopupForm 

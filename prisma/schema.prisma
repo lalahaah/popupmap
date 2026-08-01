@@ -28,6 +28,7 @@ model Popup {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   brand       Brand?     @relation(fields: [brandId], references: [id])
+  reviews     Review[]
 
   @@index([lat, lng])
   @@index([status])
@@ -49,6 +50,18 @@ model Submission {
   submitterContact String?
   status           SubStatus @default(pending)
   createdAt        DateTime  @default(now())
+}
+
+model Review {
+  id          String   @id @default(uuid())
+  popupId     String
+  popup       Popup    @relation(fields: [popupId], references: [id], onDelete: Cascade)
+  nickname    String
+  rating      Int      // 1-5
+  comment     String
+  createdAt   DateTime @default(now())
+  
+  @@index([popupId])
 }
 
 enum Category {

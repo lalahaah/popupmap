@@ -1,5 +1,15 @@
-import React from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import { Popup } from '@/types/popup';
+
+interface Review {
+  id: string;
+  nickname: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+}
 
 interface PopupDetailProps {
   popup: Popup;
@@ -8,6 +18,48 @@ interface PopupDetailProps {
 }
 
 export function PopupDetail({ popup, onClose, onShowOnMap }: PopupDetailProps) {
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [newReview, setNewReview] = useState({ nickname: '', rating: 5, comment: '' });
+
+  useEffect(() => {
+    fetch(`/api/popups/${popup.id}/reviews`)
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) setReviews(data);
+      })
+      .catch(err => console.error(err));
+  }, [popup.id]);
+
+  const handleReviewSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`/api/popups/${popup.id}/reviews`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newReview),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setReviews([data, ...reviews]);
+        setNewReview({ nickname: '', rating: 5, comment: '' });
+      } else {
+        const errorData = await res.json();
+        alert(errorData.error || '리뷰 작성에 실패했습니다.');
+      }
+    } catch (error) {
+      alert('오류가 발생했습니다.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const avgRating = reviews.length > 0 
+    ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
+    : '0';
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -146,6 +198,82 @@ export function PopupDetail({ popup, onClose, onShowOnMap }: PopupDetailProps) {
             </a>
           </div>
         )}
+
+        {/* Reviews Section */}
+        <div className="p-6 border-t-2 border-ink bg-paper">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold">리뷰 {reviews.length > 0 && <span className="text-brandBlue">({reviews.length})</span>}</h3>
+            {reviews.length > 0 && (
+              <div className="text-sm font-bold flex items-center gap-1">
+                <span className="text-brandYellow">★</span> {avgRating}
+              </div>
+            )}
+          </div>
+
+          <form onSubmit={handleReviewSubmit} className="mb-6 flex flex-col gap-3 border-2 border-ink p-4 bg-card shadow-[4px_4px_0_theme(colors.ink)]">
+            <div className="flex items-center justify-between gap-4">
+              <input 
+                type="text" 
+                placeholder="닉네임 (최대 20자)" 
+                maxLength={20}
+                required
+                className="flex-1 p-2 text-sm border-2 border-ink outline-none focus:bg-yellow-50 font-bold bg-transparent"
+                value={newReview.nickname}
+                onChange={e => setNewReview({ ...newReview, nickname: e.target.value })}
+              />
+              <div className="flex items-center gap-1 cursor-pointer">
+                {[1, 2, 3, 4, 5].map(star => (
+                  <span 
+                    key={star} 
+                    onClick={() => setNewReview({ ...newReview, rating: star })}
+                    className={`text-xl leading-none select-none ${star <= newReview.rating ? 'text-brandYellow' : 'text-neutral-300'}`}
+                  >
+                    ★
+                  </span>
+                ))}
+              </div>
+            </div>
+            <textarea 
+              placeholder="리뷰를 작성해주세요 (최대 300자)" 
+              maxLength={300}
+              required
+              rows={3}
+              className="w-full p-2 text-sm border-2 border-ink outline-none focus:bg-yellow-50 resize-none bg-transparent"
+              value={newReview.comment}
+              onChange={e => setNewReview({ ...newReview, comment: e.target.value })}
+            />
+            <button 
+              type="submit" 
+              disabled={isSubmitting}
+              className="w-full py-2 bg-ink text-white font-bold border-2 border-ink hover:bg-neutral-800 disabled:opacity-50 transition-colors"
+            >
+              {isSubmitting ? '등록 중...' : '리뷰 등록'}
+            </button>
+            <p className="text-[10px] text-neutral-500 text-center leading-tight">
+              리뷰는 승인 없이 바로 게시됩니다.<br/>부적절한 리뷰는 관리자에 의해 삭제될 수 있습니다.
+            </p>
+          </form>
+
+          <div className="flex flex-col gap-4">
+            {reviews.map(review => (
+              <div key={review.id} className="border-b-2 border-ink pb-4 last:border-0 last:pb-0">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-bold text-sm">{review.nickname}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-brandYellow text-xs">{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}</span>
+                    <span className="text-xs text-neutral-400 font-mono">
+                      {new Date(review.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+                <p className="text-sm whitespace-pre-wrap">{review.comment}</p>
+              </div>
+            ))}
+            {reviews.length === 0 && (
+              <p className="text-sm text-neutral-400 text-center py-4">첫 리뷰를 남겨주세요!</p>
+            )}
+          </div>
+        </div>
       </div>
     </>
   );

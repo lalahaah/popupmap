@@ -8,6 +8,7 @@ export default async function AdminPopupsPage() {
     orderBy: { createdAt: 'desc' },
     include: {
       brand: true,
+      reviews: { orderBy: { createdAt: 'desc' } },
     },
   });
 
