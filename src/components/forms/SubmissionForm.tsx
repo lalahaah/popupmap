@@ -24,6 +24,7 @@ export function SubmissionForm({ onClose }: SubmissionFormProps) {
       startDate: formData.get('startDate') as string,
       endDate: formData.get('endDate') as string || null,
       submitterContact: formData.get('submitterContact') as string || null,
+      sourceUrl: formData.get('sourceUrl') as string || null,
     };
 
     try {
@@ -152,6 +153,17 @@ export function SubmissionForm({ onClose }: SubmissionFormProps) {
                     className="w-full p-3 bg-white border-2 border-ink focus:outline-none focus:ring-2 focus:ring-brandBlue text-sm font-mono font-bold"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold mb-1.5">출처 링크 (선택)</label>
+                <input 
+                  type="url" 
+                  name="sourceUrl" 
+                  className="w-full p-3 bg-white border-2 border-ink focus:outline-none focus:ring-2 focus:ring-brandBlue text-sm font-medium"
+                  placeholder="예: 인스타그램 게시물, 블로그 글 링크"
+                />
+                <p className="text-xs text-neutral-500 mt-1.5 font-medium">어디서 보셨는지 링크를 남겨주시면 확인이 더 빨라져요</p>
               </div>
 
               <div>

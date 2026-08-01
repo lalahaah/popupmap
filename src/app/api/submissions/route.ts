@@ -11,6 +11,7 @@ const submissionSchema = z.object({
   startDate: z.string().min(1, '시작일을 입력해주세요.'),
   endDate: z.string().nullable().optional(),
   submitterContact: z.string().nullable().optional(),
+  sourceUrl: z.union([z.string().url('올바른 URL 형식이 아닙니다.'), z.literal('')]).nullable().optional(),
 });
 
 // Rate limit: memory-based, reset daily.
@@ -43,6 +44,7 @@ export async function POST(req: Request) {
           category: data.category,
           startDate: data.startDate,
           endDate: data.endDate || null,
+          sourceUrl: data.sourceUrl || null,
         },
         submitterContact: data.submitterContact || null,
         status: 'pending',
