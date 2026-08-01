@@ -110,7 +110,7 @@ export function Sidebar({ popups, category, onCategoryChange, sortBy, onSortChan
               checked={showEnded}
               onChange={(e) => onShowEndedChange(e.target.checked)}
             />
-            <span className="text-xs font-bold text-neutral-500">지난 팝업 보기</span>
+            <span className="text-xs font-bold text-neutral-500">지난 팝업도 함께 보기</span>
           </label>
           <span className="text-xs font-mono font-bold text-neutral-500">({popups.length}곳)</span>
         </div>

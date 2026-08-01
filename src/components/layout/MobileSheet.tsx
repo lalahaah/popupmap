@@ -148,7 +148,7 @@ export function MobileSheet({ popups, category, onCategoryChange, sortBy, onSort
             checked={showEnded}
             onChange={(e) => onShowEndedChange(e.target.checked)}
           />
-          <span className="text-xs font-bold text-neutral-500">지난 팝업 보기</span>
+          <span className="text-xs font-bold text-neutral-500">지난 팝업도 함께 보기</span>
         </label>
       </div>
       
