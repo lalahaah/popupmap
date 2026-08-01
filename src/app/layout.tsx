@@ -37,6 +37,9 @@ export const metadata: Metadata = {
     description: "팝업스토어 오픈/마감 일정을 지도에서 확인하세요.",
     images: ['/og-image.png'],
   },
+  verification: {
+    google: "CPysx2ERXBLCxjoV6pZGsa7x2mGZsYrYnFiBQep4Buc"
+  },
 };
 
 export default function RootLayout({
