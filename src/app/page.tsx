@@ -56,7 +56,7 @@ export default function Home() {
       }
     }
     fetchPopups();
-  }, [category, mapCenter, debouncedSearchQuery]);
+  }, [category, mapCenter, debouncedSearchQuery, showEnded]);
 
   const handleCurrentLocation = () => {
     if (!navigator.geolocation) {
