@@ -121,8 +121,8 @@ export default function AdminPopupForm({
           <input name="brand" value={formData.brand} onChange={handleChange} className="w-full p-2 border-2 border-ink text-sm" />
         </div>
         <div className="col-span-2">
-          <label className="block text-xs font-bold mb-1">상세 주소 *</label>
-          <input name="address" value={formData.address} onChange={handleChange} className="w-full p-2 border-2 border-ink text-sm" required />
+          <label className="block text-xs font-bold mb-1">위치 *</label>
+          <input name="address" value={formData.address} onChange={handleChange} className="w-full p-2 border-2 border-ink text-sm" placeholder="예: 무신사 스토어 성수" required />
         </div>
         <div className="col-span-2">
           <label className="block text-xs font-bold mb-1">설명</label>

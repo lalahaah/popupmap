@@ -106,14 +106,15 @@ export function SubmissionForm({ onClose }: SubmissionFormProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-bold mb-1.5">상세 주소 <span className="text-brandRed">*</span></label>
+                <label className="block text-sm font-bold mb-1.5">위치 <span className="text-brandRed">*</span></label>
                 <input 
                   type="text" 
                   name="address" 
                   required 
                   className="w-full p-3 bg-white border-2 border-ink focus:outline-none focus:ring-2 focus:ring-brandBlue focus:border-brandBlue text-sm font-medium"
-                  placeholder="예: 서울 성동구 연무장5길 8"
+                  placeholder="예: 무신사 스토어 성수"
                 />
+                <p className="text-xs text-neutral-500 mt-1.5 font-medium">정확한 번지수를 몰라도 괜찮아요. 건물명이나 근처 랜드마크만 적어도 됩니다.</p>
               </div>
 
               <div>
