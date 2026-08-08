@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { FilterChips } from '../list/FilterChips';
 import { PopupCard } from '../list/PopupCard';
 import { Popup } from '@/types/popup';
@@ -141,6 +142,14 @@ export function Sidebar({ popups, category, onCategoryChange, sortBy, onSortChan
         >
           + 팝업 제보하기
         </button>
+        <div className="mt-4 text-center text-[10px] text-neutral-500 font-sans">
+          <p>© 2026 주식회사 루시퍼 · hello@popupmap.app</p>
+          <p className="mt-1">
+            <Link href="/privacy" className="hover:underline">개인정보처리방침</Link>
+            {" · "}
+            <Link href="/terms" className="hover:underline">이용약관</Link>
+          </p>
+        </div>
       </div>
     </aside>
   );
