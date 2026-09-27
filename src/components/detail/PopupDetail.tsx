@@ -22,6 +22,28 @@ export function PopupDetail({ popup, onClose, onShowOnMap }: PopupDetailProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newReview, setNewReview] = useState({ nickname: '', rating: 5, comment: '' });
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+
+  const handleShare = async () => {
+    try {
+      const shareUrl = `${window.location.origin}/popup/${popup.id}`;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(shareUrl);
+      } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = shareUrl;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy link:', err);
+      alert('링크 복사에 실패했습니다.');
+    }
+  };
 
   useEffect(() => {
     fetch(`/api/popups/${popup.id}/reviews`)
@@ -188,18 +210,35 @@ export function PopupDetail({ popup, onClose, onShowOnMap }: PopupDetailProps) {
         </div>
 
         {/* Footer Actions */}
-        {popup.sourceUrl && (
-          <div className="p-6 border-t-2 border-ink bg-card">
+        <div className="p-6 border-t-2 border-ink bg-card flex gap-3">
+          <button 
+            type="button"
+            onClick={handleShare}
+            className="flex-1 py-3.5 bg-paper text-ink text-center font-bold border-2 border-ink shadow-[4px_4px_0_theme(colors.ink)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0_theme(colors.ink)] transition-all flex items-center justify-center gap-1.5 text-sm"
+          >
+            {isCopied ? (
+              <>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>복사 완료!</span>
+              </>
+            ) : (
+              <>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                <span>공유하기</span>
+              </>
+            )}
+          </button>
+          {popup.sourceUrl && (
             <a 
               href={popup.sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="block w-full py-3.5 bg-brandBlue text-white text-center font-bold border-2 border-ink shadow-[4px_4px_0_theme(colors.ink)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0_theme(colors.ink)] transition-all"
+              className="flex-1 py-3.5 bg-brandBlue text-white text-center font-bold border-2 border-ink shadow-[4px_4px_0_theme(colors.ink)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0_theme(colors.ink)] transition-all text-sm flex items-center justify-center"
             >
               원문 보기 ↗
             </a>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Reviews Section */}
         <div className="p-6 border-t-2 border-ink bg-paper">
