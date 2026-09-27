@@ -38,7 +38,10 @@ export const metadata: Metadata = {
     images: ['/og-image.png'],
   },
   verification: {
-    google: "CPysx2ERXBLCxjoV6pZGsa7x2mGZsYrYnFiBQep4Buc"
+    google: "CPysx2ERXBLCxjoV6pZGsa7x2mGZsYrYnFiBQep4Buc",
+    other: {
+      "naver-site-verification": "c614de66c09e50b60ad6539abf198d5227312054"
+    }
   },
 };
 
