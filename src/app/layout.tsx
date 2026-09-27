@@ -19,14 +19,14 @@ const body = Noto_Sans_KR({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://popupmap-blush.vercel.app'),
+  metadataBase: new URL('https://www.popupmap.app'),
   title: "팝업맵 | 전국 팝업스토어 실시간 지도",
   description: "성수동, 홍대, 한남동부터 전국 진행 중인 팝업스토어를 지도에서 한눈에. 마감 임박 정보까지 실시간으로 확인하세요.",
   openGraph: {
     title: "팝업맵 | 전국 팝업스토어 실시간 지도",
     description: "성수동, 홍대, 한남동부터 전국 진행 중인 팝업스토어를 지도에서 한눈에. 마감 임박 정보까지 실시간으로 확인하세요.",
     images: ['/og-image.png'],
-    url: 'https://popupmap-blush.vercel.app',
+    url: 'https://www.popupmap.app',
     siteName: "팝업맵",
     locale: 'ko_KR',
     type: 'website',

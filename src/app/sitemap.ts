@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next';
 import { prisma } from '@/lib/prisma';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://popupmap-blush.vercel.app';
+  const baseUrl = 'https://www.popupmap.app';
 
   let popupEntries: MetadataRoute.Sitemap = [];
   try {
@@ -20,7 +20,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
     }));
   } catch (error) {
-    console.error('Failed to generate dynamic sitemap entries:', error);
+    console.error('[sitemap] Failed to generate dynamic sitemap entries from Prisma:', error);
   }
 
   return [

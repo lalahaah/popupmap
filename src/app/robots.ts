@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = 'https://popupmap-blush.vercel.app';
+  const baseUrl = 'https://www.popupmap.app';
 
   return {
     rules: {

@@ -42,7 +42,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description,
       images: [imageUrl],
       type: "website",
-      url: `https://popupmap-blush.vercel.app/popup/${popup.id}`,
+      url: `https://www.popupmap.app/popup/${popup.id}`,
     },
     twitter: {
       card: "summary_large_image",
