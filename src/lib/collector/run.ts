@@ -102,6 +102,7 @@ export async function runCollector(options: RunCollectorOptions = {}) {
     llm: llmDiag,
     grounded,
     retried,
+    attempts,
   } = await collectRawCandidates({
     todayKst,
     existingNames,
@@ -112,6 +113,7 @@ export async function runCollector(options: RunCollectorOptions = {}) {
       skipped: 'no_grounding',
       retried,
       grounded,
+      ...(dryRun ? { attempts } : {}),
       llm: llmDiag,
     };
   }
@@ -303,6 +305,7 @@ export async function runCollector(options: RunCollectorOptions = {}) {
   if (dryRun) {
     return {
       ...baseSummary,
+      attempts,
       llm: llmDiag,
       candidates: finalCandidates.map((c) => ({
         name: c.candidate.name,

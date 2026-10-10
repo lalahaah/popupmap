@@ -13,13 +13,30 @@ export interface RawCandidate {
   sourceUrl: string;
 }
 
+export interface ResponseShape {
+  candidate0Keys: string[];
+  groundingMetadataExists: boolean;
+  groundingMetadataKeys: string[];
+  contentPartKeys: string[][];
+}
+
+export interface AttemptInfo {
+  attempt: number;
+  groundedByMetadata: boolean;
+  redirectUrlCount: number;
+  parsedCount: number;
+  rawTextLength: number;
+  rawTextHead: string; // 최대 8000자
+}
+
 export interface LlmDiagInfo {
   rawTextLength: number;
   parseFailed: boolean;
-  rawTextHead: string;
+  rawTextHead: string; // 최대 8000자
   webSearchQueries: string[];
   groundingChunkCount: number;
   groundingDomains: string[];
+  responseShape: ResponseShape;
 }
 
 export interface CollectRawCandidatesResult {
@@ -32,6 +49,7 @@ export interface CollectRawCandidatesResult {
   llm: LlmDiagInfo;
   grounded: boolean;
   retried: boolean;
+  attempts: AttemptInfo[];
 }
 
 const candidateSchema = z.object({
@@ -44,6 +62,8 @@ const candidateSchema = z.object({
   description: z.string().max(300).optional().transform(v => v || ''),
   sourceUrl: z.string().url(),
 });
+
+const REDIRECT_SIGNATURE = 'vertexaisearch.cloud.google.com/grounding-api-redirect';
 
 export async function collectRawCandidates({
   todayKst,
@@ -107,7 +127,7 @@ ${existingNames.length > 0 ? existingNames.join('\n') : '(등록된 팝업 없�
 
   const ai = new GoogleGenAI({ apiKey });
 
-  const executeCall = async (contentPrompt: string) => {
+  const runAttempt = async (attemptNum: number, contentPrompt: string) => {
     const response = await ai.models.generateContent({
       model: GEMINI_MODEL,
       contents: contentPrompt,
@@ -118,9 +138,23 @@ ${existingNames.length > 0 ? existingNames.join('\n') : '(등록된 팝업 없�
     });
 
     const raw = response.text || '';
-    const metadata = response.candidates?.[0]?.groundingMetadata;
-    const queries = metadata?.webSearchQueries || [];
-    const chunks = metadata?.groundingChunks || [];
+    const cand0 = response.candidates?.[0];
+    const candidate0Keys = cand0 ? Object.keys(cand0) : [];
+    const groundingMetadata = cand0?.groundingMetadata;
+    const groundingMetadataExists = !!groundingMetadata;
+    const groundingMetadataKeys = groundingMetadata ? Object.keys(groundingMetadata) : [];
+    const parts = cand0?.content?.parts || [];
+    const contentPartKeys = parts.map((p: any) => (p && typeof p === 'object' ? Object.keys(p) : []));
+
+    const responseShape: ResponseShape = {
+      candidate0Keys,
+      groundingMetadataExists,
+      groundingMetadataKeys,
+      contentPartKeys,
+    };
+
+    const queries = groundingMetadata?.webSearchQueries || [];
+    const chunks = groundingMetadata?.groundingChunks || [];
     const domains: string[] = [];
 
     if (Array.isArray(chunks)) {
@@ -131,28 +165,114 @@ ${existingNames.length > 0 ? existingNames.join('\n') : '(등록된 팝업 없�
       }
     }
 
-    const isGrounded = queries.length > 0 || (Array.isArray(chunks) && chunks.length > 0);
+    const groundedByMetadata = queries.length > 0 || (Array.isArray(chunks) && chunks.length > 0);
+
+    // 파싱 시도
+    let cleanText = raw.trim();
+    if (cleanText.includes('```')) {
+      cleanText = cleanText.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim();
+    }
+
+    const firstBracket = cleanText.indexOf('[');
+    const lastBracket = cleanText.lastIndexOf(']');
+
+    let parseError = false;
+    let parsedArray: any[] = [];
+
+    if (firstBracket === -1 || lastBracket === -1 || firstBracket >= lastBracket) {
+      parseError = true;
+    } else {
+      const jsonSlice = cleanText.substring(firstBracket, lastBracket + 1);
+      try {
+        const parsed = JSON.parse(jsonSlice);
+        if (Array.isArray(parsed)) {
+          parsedArray = parsed;
+        } else {
+          parseError = true;
+        }
+      } catch {
+        parseError = true;
+      }
+    }
+
+    const parsedCandidates: RawCandidate[] = [];
+    const invalidItems: Array<{ name: string; sourceUrl: string; detail: string }> = [];
+    let invalidCount = 0;
+    let redirectUrlCount = 0;
+
+    for (const rawItem of parsedArray) {
+      if (
+        typeof rawItem?.sourceUrl === 'string' &&
+        rawItem.sourceUrl.includes(REDIRECT_SIGNATURE)
+      ) {
+        redirectUrlCount++;
+      }
+
+      const parsed = candidateSchema.safeParse(rawItem);
+      if (parsed.success) {
+        parsedCandidates.push(parsed.data as RawCandidate);
+      } else {
+        invalidCount++;
+        const detailMsg = parsed.error.issues
+          .map((issue) => `${issue.path.join('.') || 'root'}: ${issue.message}`)
+          .join(', ');
+        invalidItems.push({
+          name: typeof rawItem?.name === 'string' ? rawItem.name : '(이름 누락)',
+          sourceUrl: typeof rawItem?.sourceUrl === 'string' ? rawItem.sourceUrl : '',
+          detail: `스키마 검증 실패: ${detailMsg}`,
+        });
+      }
+    }
+
+    // JSON 파싱 실패 시에도 raw 전체에서 REDIRECT_SIGNATURE 검사
+    if (parsedArray.length === 0 && raw.includes(REDIRECT_SIGNATURE)) {
+      redirectUrlCount = (raw.match(new RegExp(REDIRECT_SIGNATURE.replace(/\./g, '\\.'), 'g')) || []).length;
+    }
+
+    const grounded = groundedByMetadata || redirectUrlCount > 0;
+
+    const attemptInfo: AttemptInfo = {
+      attempt: attemptNum,
+      groundedByMetadata,
+      redirectUrlCount,
+      parsedCount: parsedCandidates.length,
+      rawTextLength: raw.length,
+      rawTextHead: raw.slice(0, 8000),
+    };
 
     return {
       rawText: raw,
       webSearchQueries: queries,
       groundingChunkCount: Array.isArray(chunks) ? chunks.length : 0,
       groundingDomains: domains,
-      grounded: isGrounded,
+      groundedByMetadata,
+      redirectUrlCount,
+      grounded,
+      parseError,
+      parsedCandidates,
+      invalidCount,
+      invalidItems,
+      responseShape,
+      attemptInfo,
     };
   };
 
-  let callResult: Awaited<ReturnType<typeof executeCall>>;
+  let activeAttempt: Awaited<ReturnType<typeof runAttempt>>;
+  const attempts: AttemptInfo[] = [];
   let retried = false;
 
   try {
-    callResult = await executeCall(basePrompt);
+    const attempt1 = await runAttempt(1, basePrompt);
+    attempts.push(attempt1.attemptInfo);
 
-    // grounded 가드: 검색이 수행되지 않았으면 1회 재시도
-    if (!callResult.grounded) {
+    if (!attempt1.grounded) {
       retried = true;
       const retryPrompt = `${basePrompt}\n\n[재시도] 직전 응답은 검색 없이 작성되어 폐기되었다. 반드시 Google 검색을 수행한 뒤 다시 답하라.`;
-      callResult = await executeCall(retryPrompt);
+      const attempt2 = await runAttempt(2, retryPrompt);
+      attempts.push(attempt2.attemptInfo);
+      activeAttempt = attempt2;
+    } else {
+      activeAttempt = attempt1;
     }
   } catch (error: any) {
     let safeMessage = error?.message || 'Unknown error during Gemini call';
@@ -163,110 +283,40 @@ ${existingNames.length > 0 ? existingNames.join('\n') : '(등록된 팝업 없�
   }
 
   const makeLlmDiag = (parseFailed: boolean): LlmDiagInfo => ({
-    rawTextLength: callResult.rawText.length,
+    rawTextLength: activeAttempt.rawText.length,
     parseFailed,
-    rawTextHead: callResult.rawText.slice(0, 3000),
-    webSearchQueries: callResult.webSearchQueries,
-    groundingChunkCount: callResult.groundingChunkCount,
-    groundingDomains: callResult.groundingDomains,
+    rawTextHead: activeAttempt.rawText.slice(0, 8000),
+    webSearchQueries: activeAttempt.webSearchQueries,
+    groundingChunkCount: activeAttempt.groundingChunkCount,
+    groundingDomains: activeAttempt.groundingDomains,
+    responseShape: activeAttempt.responseShape,
   });
 
-  // 재시도 후에도 grounded가 false이면 모든 후보 폐기
-  if (!callResult.grounded) {
+  if (!activeAttempt.grounded) {
     return {
       items: [],
-      groundingDomains: callResult.groundingDomains,
-      rawText: callResult.rawText,
+      groundingDomains: activeAttempt.groundingDomains,
+      rawText: activeAttempt.rawText,
       parseError: false,
       invalidCount: 0,
       invalidItems: [],
       llm: makeLlmDiag(false),
       grounded: false,
       retried,
+      attempts,
     };
-  }
-
-  // 응답 파싱
-  let cleanText = callResult.rawText.trim();
-  if (cleanText.includes('```')) {
-    cleanText = cleanText.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim();
-  }
-
-  const firstBracket = cleanText.indexOf('[');
-  const lastBracket = cleanText.lastIndexOf(']');
-
-  if (firstBracket === -1 || lastBracket === -1 || firstBracket >= lastBracket) {
-    return {
-      items: [],
-      groundingDomains: callResult.groundingDomains,
-      rawText: callResult.rawText,
-      parseError: true,
-      invalidCount: 0,
-      llm: makeLlmDiag(true),
-      grounded: true,
-      retried,
-    };
-  }
-
-  const jsonSlice = cleanText.substring(firstBracket, lastBracket + 1);
-  let parsedArray: any[];
-  try {
-    parsedArray = JSON.parse(jsonSlice);
-    if (!Array.isArray(parsedArray)) {
-      return {
-        items: [],
-        groundingDomains: callResult.groundingDomains,
-        rawText: callResult.rawText,
-        parseError: true,
-        invalidCount: 0,
-        llm: makeLlmDiag(true),
-        grounded: true,
-        retried,
-      };
-    }
-  } catch {
-    return {
-      items: [],
-      groundingDomains: callResult.groundingDomains,
-      rawText: callResult.rawText,
-      parseError: true,
-      invalidCount: 0,
-      llm: makeLlmDiag(true),
-      grounded: true,
-      retried,
-    };
-  }
-
-  const items: RawCandidate[] = [];
-  const invalidItems: Array<{ name: string; sourceUrl: string; detail: string }> = [];
-  let invalidCount = 0;
-
-  for (const rawItem of parsedArray) {
-    const parsed = candidateSchema.safeParse(rawItem);
-    if (parsed.success) {
-      items.push(parsed.data as RawCandidate);
-    } else {
-      invalidCount++;
-      const detailMsg = parsed.error.issues
-        .map((issue) => `${issue.path.join('.') || 'root'}: ${issue.message}`)
-        .join(', ');
-      invalidItems.push({
-        name: typeof rawItem?.name === 'string' ? rawItem.name : '(이름 누락)',
-        sourceUrl: typeof rawItem?.sourceUrl === 'string' ? rawItem.sourceUrl : '',
-        detail: `스키마 검증 실패: ${detailMsg}`,
-      });
-    }
   }
 
   return {
-    items,
-    groundingDomains: callResult.groundingDomains,
-    rawText: callResult.rawText,
-    parseError: false,
-    invalidCount,
-    invalidItems,
-    llm: makeLlmDiag(false),
+    items: activeAttempt.parsedCandidates,
+    groundingDomains: activeAttempt.groundingDomains,
+    rawText: activeAttempt.rawText,
+    parseError: activeAttempt.parseError,
+    invalidCount: activeAttempt.invalidCount,
+    invalidItems: activeAttempt.invalidItems,
+    llm: makeLlmDiag(activeAttempt.parseError),
     grounded: true,
     retried,
+    attempts,
   };
 }
