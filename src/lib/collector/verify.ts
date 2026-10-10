@@ -318,22 +318,24 @@ export async function verifyCandidate(candidate: RawCandidate): Promise<Verifica
     return true;
   });
 
+  const matchedTokens: string[] = [];
+  for (const token of validTokens) {
+    const normToken = normalizeText(token);
+    if (normToken.length >= 2 && normalizedBody.includes(normToken)) {
+      matchedTokens.push(token);
+    }
+  }
+
   let nameMatched = false;
 
   if (validTokens.length === 0) {
     const normName = normalizeText(candidate.name);
     if (normName.length >= 2 && normalizedBody.includes(normName)) {
       nameMatched = true;
+      matchedTokens.push(candidate.name);
     }
   } else {
-    let matchedTokenCount = 0;
-    for (const token of validTokens) {
-      const normToken = normalizeText(token);
-      if (normToken.length >= 2 && normalizedBody.includes(normToken)) {
-        matchedTokenCount++;
-      }
-    }
-    if (matchedTokenCount / validTokens.length >= 0.5) {
+    if (matchedTokens.length / validTokens.length >= 0.5) {
       nameMatched = true;
     }
   }
@@ -342,14 +344,16 @@ export async function verifyCandidate(candidate: RawCandidate): Promise<Verifica
     const normBrand = normalizeText(candidate.brandName);
     if (normBrand.length >= 2 && normalizedBody.includes(normBrand)) {
       nameMatched = true;
+      matchedTokens.push(candidate.brandName);
     }
   }
 
   // 읽을 수 있는 본문인데 이름 불일치 -> mismatch
   if (!nameMatched) {
+    const bodyHead = bodyText.slice(0, 200);
     return {
       level: 'mismatch',
-      detail: `이름 미확인: '${candidate.name}' 본문(${bodyText.length}자, HTTP ${httpStatus ?? 200}) 미포함`,
+      detail: `이름 미확인 (본문 ${bodyText.length}자, HTTP ${httpStatus ?? 200}) | 이름 토큰: [${validTokens.join(', ')}] | 본문에서 찾은 토큰: [${matchedTokens.join(', ')}] | 본문 앞 200자: "${bodyHead}"`,
       finalUrl,
     };
   }

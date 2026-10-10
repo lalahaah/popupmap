@@ -13,6 +13,15 @@ export interface RawCandidate {
   sourceUrl: string;
 }
 
+export interface LlmDiagInfo {
+  rawTextLength: number;
+  parseFailed: boolean;
+  rawTextHead: string;
+  webSearchQueries: string[];
+  groundingChunkCount: number;
+  groundingDomains: string[];
+}
+
 export interface CollectRawCandidatesResult {
   items: RawCandidate[];
   groundingDomains: string[];
@@ -20,6 +29,7 @@ export interface CollectRawCandidatesResult {
   parseError?: boolean;
   invalidCount: number;
   invalidItems?: Array<{ name: string; sourceUrl: string; detail: string }>;
+  llm: LlmDiagInfo;
 }
 
 const candidateSchema = z.object({
@@ -69,6 +79,8 @@ ${existingNames.length > 0 ? existingNames.join('\n') : '(등록된 팝업 없�
 
   let rawText = '';
   const groundingDomains: string[] = [];
+  const webSearchQueries: string[] = [];
+  let groundingChunkCount = 0;
 
   try {
     const ai = new GoogleGenAI({ apiKey });
@@ -83,8 +95,13 @@ ${existingNames.length > 0 ? existingNames.join('\n') : '(등록된 팝업 없�
 
     rawText = response.text || '';
 
-    const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+    const metadata = response.candidates?.[0]?.groundingMetadata;
+    if (metadata?.webSearchQueries) {
+      webSearchQueries.push(...metadata.webSearchQueries);
+    }
+    const chunks = metadata?.groundingChunks;
     if (Array.isArray(chunks)) {
+      groundingChunkCount = chunks.length;
       for (const chunk of chunks) {
         if (chunk.web?.title) {
           groundingDomains.push(chunk.web.title);
@@ -99,6 +116,15 @@ ${existingNames.length > 0 ? existingNames.join('\n') : '(등록된 팝업 없�
     }
     throw new Error(`Gemini generateContent failed: ${safeMessage}`);
   }
+
+  const makeLlmDiag = (parseFailed: boolean): LlmDiagInfo => ({
+    rawTextLength: rawText.length,
+    parseFailed,
+    rawTextHead: rawText.slice(0, 3000),
+    webSearchQueries,
+    groundingChunkCount,
+    groundingDomains,
+  });
 
   // 응답 파싱
   let cleanText = rawText.trim();
@@ -116,6 +142,7 @@ ${existingNames.length > 0 ? existingNames.join('\n') : '(등록된 팝업 없�
       rawText,
       parseError: true,
       invalidCount: 0,
+      llm: makeLlmDiag(true),
     };
   }
 
@@ -130,6 +157,7 @@ ${existingNames.length > 0 ? existingNames.join('\n') : '(등록된 팝업 없�
         rawText,
         parseError: true,
         invalidCount: 0,
+        llm: makeLlmDiag(true),
       };
     }
   } catch {
@@ -139,6 +167,7 @@ ${existingNames.length > 0 ? existingNames.join('\n') : '(등록된 팝업 없�
       rawText,
       parseError: true,
       invalidCount: 0,
+      llm: makeLlmDiag(true),
     };
   }
 
@@ -170,5 +199,6 @@ ${existingNames.length > 0 ? existingNames.join('\n') : '(등록된 팝업 없�
     parseError: false,
     invalidCount,
     invalidItems,
+    llm: makeLlmDiag(false),
   };
 }

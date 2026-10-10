@@ -95,7 +95,7 @@ export async function runCollector(options: RunCollectorOptions = {}) {
   const existingNames = Array.from(existingNamesSet);
 
   // ④ collectRawCandidates 호출
-  const { items: rawCandidates, invalidCount, invalidItems } = await collectRawCandidates({
+  const { items: rawCandidates, invalidCount, invalidItems, llm: llmDiag } = await collectRawCandidates({
     todayKst,
     existingNames,
   });
@@ -285,6 +285,7 @@ export async function runCollector(options: RunCollectorOptions = {}) {
   if (dryRun) {
     return {
       ...baseSummary,
+      llm: llmDiag,
       candidates: finalCandidates.map((c) => ({
         name: c.candidate.name,
         brand: c.candidate.brandName,
