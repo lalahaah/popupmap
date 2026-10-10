@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/update-status",
       "schedule": "15 15 * * *"
+    },
+    {
+      "path": "/api/cron/collect-popups",
+      "schedule": "30 15 * * 0,3"
     }
   ]
 }

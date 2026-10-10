@@ -1,0 +1,161 @@
+import { GoogleGenAI } from '@google/genai';
+import { z } from 'zod';
+import { GEMINI_MODEL, WINDOW_DAYS, MAX_CANDIDATES, REGION_FOCUS } from './config';
+
+export interface RawCandidate {
+  name: string;
+  brandName: string | null;
+  category: 'FASHION' | 'BEAUTY' | 'FOOD' | 'GOODS' | 'EXHIBIT' | 'ETC';
+  address: string;
+  startDate: string;
+  endDate: string | null;
+  description: string;
+  sourceUrl: string;
+}
+
+export interface CollectRawCandidatesResult {
+  items: RawCandidate[];
+  groundingDomains: string[];
+  rawText: string;
+  parseError?: boolean;
+  invalidCount: number;
+}
+
+const candidateSchema = z.object({
+  name: z.string().min(2),
+  brandName: z.string().nullable().optional().transform(v => (v && v.trim() ? v.trim() : null)),
+  category: z.enum(['FASHION', 'BEAUTY', 'FOOD', 'GOODS', 'EXHIBIT', 'ETC']),
+  address: z.string().min(2),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  endDate: z.union([z.string().regex(/^\d{4}-\d{2}-\d{2}$/), z.null(), z.literal('')]).optional().transform(v => (v ? v : null)),
+  description: z.string().max(300).optional().transform(v => v || ''),
+  sourceUrl: z.string().url(),
+});
+
+export async function collectRawCandidates({
+  todayKst,
+  existingNames,
+}: {
+  todayKst: string;
+  existingNames: string[];
+}): Promise<CollectRawCandidatesResult> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY environment variable is missing');
+  }
+
+  const prompt = `오늘 날짜: ${todayKst} (한국 시간)
+
+너는 한국 팝업스토어 정보를 조사하는 리서처다. Google 검색을 사용해서, 지금 진행 중이거나 앞으로 ${WINDOW_DAYS}일 안에 시작하는 팝업스토어를 찾아라.
+
+우선 참고할 출처: 성수동고릴라(seongsudonggorilla.com), 팝가(popga.co.kr), 데이포유(dayforyou.com), 브랜드 공식 채널/보도자료, 언론 기사.
+지역: 전국. 단 ${REGION_FOCUS}를 우선 찾아라.
+
+이미 등록된 팝업 (중복이므로 제외):
+${existingNames.length > 0 ? existingNames.join('\n') : '(등록된 팝업 없음)'}
+
+규칙:
+- 검색으로 확인된 사실만 쓴다. 확인하지 못한 값은 null. 추측·창작 금지.
+- sourceUrl은 그 팝업을 직접 다루는 기사/페이지의 실제 URL이어야 한다. URL을 만들어내거나 사이트 메인 주소로 대체하지 않는다. 확인된 URL이 없는 팝업은 결과에서 제외한다.
+- 이미 종료된 팝업, 위 목록과 중복되는 팝업은 제외한다.
+- 브랜드·장소·날짜를 서로 다른 팝업의 정보와 섞지 않는다. 한 출처에 적힌 정보만으로 항목을 구성한다.
+- 최대 ${MAX_CANDIDATES}개.
+
+출력: 설명 없이 JSON 배열만 출력한다. 각 원소 형식:
+{"name": string, "brandName": string|null, "category": "FASHION"|"BEAUTY"|"FOOD"|"GOODS"|"EXHIBIT"|"ETC", "address": string, "startDate": "YYYY-MM-DD", "endDate": "YYYY-MM-DD"|null, "description": string (한국어 1~2문장, 광고 문구 제외), "sourceUrl": string}`;
+
+  let rawText = '';
+  const groundingDomains: string[] = [];
+
+  try {
+    const ai = new GoogleGenAI({ apiKey });
+    const response = await ai.models.generateContent({
+      model: GEMINI_MODEL,
+      contents: prompt,
+      config: {
+        tools: [{ googleSearch: {} }],
+        temperature: 0.2,
+      },
+    });
+
+    rawText = response.text || '';
+
+    const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+    if (Array.isArray(chunks)) {
+      for (const chunk of chunks) {
+        if (chunk.web?.title) {
+          groundingDomains.push(chunk.web.title);
+        }
+      }
+    }
+  } catch (error: any) {
+    // API 키 노출 방지
+    let safeMessage = error?.message || 'Unknown error during Gemini call';
+    if (apiKey) {
+      safeMessage = safeMessage.replaceAll(apiKey, '[REDACTED]');
+    }
+    throw new Error(`Gemini generateContent failed: ${safeMessage}`);
+  }
+
+  // 응답 파싱
+  let cleanText = rawText.trim();
+  if (cleanText.includes('```')) {
+    cleanText = cleanText.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim();
+  }
+
+  const firstBracket = cleanText.indexOf('[');
+  const lastBracket = cleanText.lastIndexOf(']');
+
+  if (firstBracket === -1 || lastBracket === -1 || firstBracket >= lastBracket) {
+    return {
+      items: [],
+      groundingDomains,
+      rawText,
+      parseError: true,
+      invalidCount: 0,
+    };
+  }
+
+  const jsonSlice = cleanText.substring(firstBracket, lastBracket + 1);
+  let parsedArray: any[];
+  try {
+    parsedArray = JSON.parse(jsonSlice);
+    if (!Array.isArray(parsedArray)) {
+      return {
+        items: [],
+        groundingDomains,
+        rawText,
+        parseError: true,
+        invalidCount: 0,
+      };
+    }
+  } catch {
+    return {
+      items: [],
+      groundingDomains,
+      rawText,
+      parseError: true,
+      invalidCount: 0,
+    };
+  }
+
+  const items: RawCandidate[] = [];
+  let invalidCount = 0;
+
+  for (const rawItem of parsedArray) {
+    const parsed = candidateSchema.safeParse(rawItem);
+    if (parsed.success) {
+      items.push(parsed.data as RawCandidate);
+    } else {
+      invalidCount++;
+    }
+  }
+
+  return {
+    items,
+    groundingDomains,
+    rawText,
+    parseError: false,
+    invalidCount,
+  };
+}

@@ -49,6 +49,7 @@
 - [x] **STEP J-4** — 상세팝업 배경 블러 제거, 지도 반응 동시 노출 완료
 - [x] STEP K — status 자동 갱신 API + Vercel Cron 설정 완료 (checked:21, updated:8 확인)
 - [x] STEP K-1 — 종료 팝업 시각적 구분 (지도 회색 핀, 리스트 하단 정렬+회색 처리) 완료
+- [x] **STEP L-30** — 주간 팝업 후보 자동수집 (Gemini 검색, 승인 큐 전용) 구현 완료
 - [ ] STEP L — 배포 & QA
 
 전체 API 명세, DB 스키마 상세, 폴더 구조는 `plan.md` 참고.
