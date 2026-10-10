@@ -19,6 +19,7 @@ export interface CollectRawCandidatesResult {
   rawText: string;
   parseError?: boolean;
   invalidCount: number;
+  invalidItems?: Array<{ name: string; sourceUrl: string; detail: string }>;
 }
 
 const candidateSchema = z.object({
@@ -56,6 +57,8 @@ ${existingNames.length > 0 ? existingNames.join('\n') : '(등록된 팝업 없�
 
 규칙:
 - 검색으로 확인된 사실만 쓴다. 확인하지 못한 값은 null. 추측·창작 금지.
+- name은 출처에 적힌 공식 팝업명 그대로 쓴다. 요약·합성·수식어 추가 금지.
+- 날짜는 연도까지 확인해서 YYYY-MM-DD로 쓴다. 출처에 연도가 없으면 오늘 날짜 기준 가장 가까운 미래로 해석한다.
 - sourceUrl은 그 팝업을 직접 다루는 기사/페이지의 실제 URL이어야 한다. URL을 만들어내거나 사이트 메인 주소로 대체하지 않는다. 확인된 URL이 없는 팝업은 결과에서 제외한다.
 - 이미 종료된 팝업, 위 목록과 중복되는 팝업은 제외한다.
 - 브랜드·장소·날짜를 서로 다른 팝업의 정보와 섞지 않는다. 한 출처에 적힌 정보만으로 항목을 구성한다.
@@ -140,6 +143,7 @@ ${existingNames.length > 0 ? existingNames.join('\n') : '(등록된 팝업 없�
   }
 
   const items: RawCandidate[] = [];
+  const invalidItems: Array<{ name: string; sourceUrl: string; detail: string }> = [];
   let invalidCount = 0;
 
   for (const rawItem of parsedArray) {
@@ -148,6 +152,14 @@ ${existingNames.length > 0 ? existingNames.join('\n') : '(등록된 팝업 없�
       items.push(parsed.data as RawCandidate);
     } else {
       invalidCount++;
+      const detailMsg = parsed.error.issues
+        .map((issue) => `${issue.path.join('.') || 'root'}: ${issue.message}`)
+        .join(', ');
+      invalidItems.push({
+        name: typeof rawItem?.name === 'string' ? rawItem.name : '(이름 누락)',
+        sourceUrl: typeof rawItem?.sourceUrl === 'string' ? rawItem.sourceUrl : '',
+        detail: `스키마 검증 실패: ${detailMsg}`,
+      });
     }
   }
 
@@ -157,5 +169,6 @@ ${existingNames.length > 0 ? existingNames.join('\n') : '(등록된 팝업 없�
     rawText,
     parseError: false,
     invalidCount,
+    invalidItems,
   };
 }

@@ -92,18 +92,20 @@ export async function getExistingTargets(todayKstDate: Date): Promise<ExistingTa
   return targets;
 }
 
-/**
- * 단일 후보가 기존 목록 또는 이미 추가된 후보와 중복되는지 검사
- */
-export function isDuplicate(candidate: RawCandidate, targets: ExistingTarget[]): boolean {
+export function isDuplicate(
+  candidate: RawCandidate,
+  targets: ExistingTarget[],
+  effectiveUrl?: string
+): boolean {
   const candStartDate = parseDateSafe(candidate.startDate);
+  const compareUrl = effectiveUrl || candidate.sourceUrl;
 
   for (const target of targets) {
     // 1. sourceUrl 일치 여부 (submissions 또는 popup과 동일 URL)
     if (
-      candidate.sourceUrl &&
+      compareUrl &&
       target.sourceUrl &&
-      candidate.sourceUrl.trim().toLowerCase() === target.sourceUrl.trim().toLowerCase()
+      compareUrl.trim().toLowerCase() === target.sourceUrl.trim().toLowerCase()
     ) {
       return true;
     }

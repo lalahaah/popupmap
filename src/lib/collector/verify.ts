@@ -6,6 +6,7 @@ export type VerificationLevel = 'verified' | 'name_only' | 'unreadable' | 'misma
 export interface VerificationResult {
   level: VerificationLevel;
   detail: string;
+  finalUrl?: string;
 }
 
 // 일반어 토큰 목록 (이름 매칭에서 제외)
@@ -19,6 +20,36 @@ const STOP_WORDS = new Set([
   '오픈',
   '한정',
 ]);
+
+/**
+ * URL이 Vertex AI Search 리다이렉트 호스트인지 검사
+ */
+export function isVertexAiHost(urlString: string): boolean {
+  try {
+    const url = new URL(urlString);
+    return url.hostname.toLowerCase() === 'vertexaisearch.cloud.google.com';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * URL이 google.com 계열 호스트인지 검사
+ */
+export function isGoogleHost(urlString?: string): boolean {
+  if (!urlString) return true;
+  try {
+    const url = new URL(urlString);
+    const host = url.hostname.toLowerCase();
+    return (
+      host === 'vertexaisearch.cloud.google.com' ||
+      host === 'google.com' ||
+      host.endsWith('.google.com')
+    );
+  } catch {
+    return true;
+  }
+}
 
 /**
  * SSRF 방어: URL 및 호스트 유효성 검사
@@ -173,10 +204,14 @@ export async function verifyCandidate(candidate: RawCandidate): Promise<Verifica
     return {
       level: 'unreadable',
       detail: `SSRF 차단: ${initialCheck.reason}`,
+      finalUrl: undefined,
     };
   }
 
   let htmlText = '';
+  let finalUrl: string | undefined = undefined;
+  let httpStatus: number | undefined = undefined;
+
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
@@ -192,13 +227,16 @@ export async function verifyCandidate(candidate: RawCandidate): Promise<Verifica
 
     clearTimeout(timeoutId);
 
-    // 2. 리다이렉트 후 최종 URL(res.url)에 대해 SSRF 2차 검사
+    httpStatus = res.status;
     if (res.url) {
+      finalUrl = res.url;
+      // 2. 리다이렉트 후 최종 URL(res.url)에 대해 SSRF 2차 검사
       const redirectCheck = isSafeUrl(res.url);
       if (!redirectCheck.safe) {
         return {
           level: 'unreadable',
-          detail: `리다이렉트 SSRF 차단: ${redirectCheck.reason}`,
+          detail: `리다이렉트 SSRF 차단 (HTTP ${res.status}): ${redirectCheck.reason}`,
+          finalUrl,
         };
       }
     }
@@ -207,6 +245,7 @@ export async function verifyCandidate(candidate: RawCandidate): Promise<Verifica
       return {
         level: 'unreadable',
         detail: `HTTP 상태 코드 에러: ${res.status}`,
+        finalUrl,
       };
     }
 
@@ -214,7 +253,8 @@ export async function verifyCandidate(candidate: RawCandidate): Promise<Verifica
     if (!contentType.toLowerCase().includes('text/html')) {
       return {
         level: 'unreadable',
-        detail: `비HTML 응답: ${contentType}`,
+        detail: `비HTML 응답 (HTTP ${res.status}): ${contentType}`,
+        finalUrl,
       };
     }
 
@@ -253,6 +293,7 @@ export async function verifyCandidate(candidate: RawCandidate): Promise<Verifica
     return {
       level: 'unreadable',
       detail: `페이지 가져오기 실패: ${error?.message || '네트워크 오류'}`,
+      finalUrl: undefined,
     };
   }
 
@@ -261,14 +302,14 @@ export async function verifyCandidate(candidate: RawCandidate): Promise<Verifica
   if (bodyText.length < 300) {
     return {
       level: 'unreadable',
-      detail: `본문 텍스트 길이 부족 (${bodyText.length}자 < 300자)`,
+      detail: `본문 텍스트 길이 부족 (${bodyText.length}자 < 300자, HTTP ${httpStatus ?? 200})`,
+      finalUrl,
     };
   }
 
   const normalizedBody = normalizeText(bodyText);
 
   // 4. 이름 일치 판정
-  // name을 공백/x/×/:/-/·로 쪼개 토큰화
   const rawTokens = candidate.name.split(/[ \t\nx×:\-·]+/i);
   const validTokens = rawTokens.filter((token) => {
     const trimmed = token.trim();
@@ -280,7 +321,6 @@ export async function verifyCandidate(candidate: RawCandidate): Promise<Verifica
   let nameMatched = false;
 
   if (validTokens.length === 0) {
-    // 유효 토큰이 없으면 정규화된 전체 이름으로 확인
     const normName = normalizeText(candidate.name);
     if (normName.length >= 2 && normalizedBody.includes(normName)) {
       nameMatched = true;
@@ -293,13 +333,11 @@ export async function verifyCandidate(candidate: RawCandidate): Promise<Verifica
         matchedTokenCount++;
       }
     }
-    // 남은 토큰의 50% 이상 매칭
     if (matchedTokenCount / validTokens.length >= 0.5) {
       nameMatched = true;
     }
   }
 
-  // brandName(2자 이상)이 본문에 있으면 이름 일치 통과
   if (!nameMatched && candidate.brandName) {
     const normBrand = normalizeText(candidate.brandName);
     if (normBrand.length >= 2 && normalizedBody.includes(normBrand)) {
@@ -311,12 +349,12 @@ export async function verifyCandidate(candidate: RawCandidate): Promise<Verifica
   if (!nameMatched) {
     return {
       level: 'mismatch',
-      detail: `본문에서 팝업 이름(${candidate.name}) 미확인`,
+      detail: `이름 미확인: '${candidate.name}' 본문(${bodyText.length}자, HTTP ${httpStatus ?? 200}) 미포함`,
+      finalUrl,
     };
   }
 
   // 5. 날짜 일치 판정
-  // startDate 또는 endDate의 표기 변형 중 하나라도 본문에 있으면 통과
   const dateVariants: string[] = [];
   if (candidate.startDate) {
     dateVariants.push(...generateDateVariants(candidate.startDate));
@@ -327,7 +365,6 @@ export async function verifyCandidate(candidate: RawCandidate): Promise<Verifica
 
   let dateMatched = false;
   for (const variant of dateVariants) {
-    // 공백 유무에 상관없이 정규화해서 매칭하거나 원문 매칭
     if (bodyText.includes(variant) || normalizedBody.includes(normalizeText(variant))) {
       dateMatched = true;
       break;
@@ -337,12 +374,14 @@ export async function verifyCandidate(candidate: RawCandidate): Promise<Verifica
   if (dateMatched) {
     return {
       level: 'verified',
-      detail: '이름 및 일정 모두 본문에서 확인됨',
+      detail: `이름 및 일정 모두 본문에서 확인됨 (본문 ${bodyText.length}자, HTTP ${httpStatus ?? 200})`,
+      finalUrl,
     };
   }
 
   return {
     level: 'name_only',
-    detail: '이름은 확인되었으나 일정 표기는 본문에서 미확인',
+    detail: `이름 확인됨, 일정 표기 미확인 (본문 ${bodyText.length}자, HTTP ${httpStatus ?? 200})`,
+    finalUrl,
   };
 }
