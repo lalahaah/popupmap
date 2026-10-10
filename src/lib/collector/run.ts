@@ -42,6 +42,7 @@ export interface DroppedItem {
 }
 
 export async function runCollector(options: RunCollectorOptions = {}) {
+  const startTime = Date.now();
   const dryRun = !!options.dryRun;
   const dropped: DroppedItem[] = [];
 
@@ -60,11 +61,14 @@ export async function runCollector(options: RunCollectorOptions = {}) {
   }).length;
 
   if (pendingAuto >= MAX_PENDING_AUTO) {
+    const elapsedMs = Date.now() - startTime;
     return {
       skipped: 'backlog',
       pendingAuto,
       maxPendingAuto: MAX_PENDING_AUTO,
       todayKst,
+      elapsedMs,
+      timeBudgetWarning: elapsedMs > 45000,
     };
   }
 
@@ -94,7 +98,7 @@ export async function runCollector(options: RunCollectorOptions = {}) {
   }
   const existingNames = Array.from(existingNamesSet);
 
-  // ④ collectRawCandidates 호출
+  // ④ collectRawCandidates 호출 (그룹 병렬)
   const {
     items: rawCandidates,
     invalidCount,
@@ -102,18 +106,21 @@ export async function runCollector(options: RunCollectorOptions = {}) {
     llm: llmDiag,
     grounded,
     retried,
-    attempts,
+    perCall,
   } = await collectRawCandidates({
     todayKst,
     existingNames,
   });
 
   if (!grounded) {
+    const elapsedMs = Date.now() - startTime;
     return {
       skipped: 'no_grounding',
       retried,
       grounded,
-      ...(dryRun ? { attempts } : {}),
+      elapsedMs,
+      timeBudgetWarning: elapsedMs > 45000,
+      ...(dryRun ? { perCall } : {}),
       llm: llmDiag,
     };
   }
@@ -129,11 +136,40 @@ export async function runCollector(options: RunCollectorOptions = {}) {
     }
   }
 
-  // ⑤ 이미 종료(endDate < 오늘)이거나 startDate가 오늘+WINDOW_DAYS 이후인 항목 제거
+  // ⑤ 그룹 간 중복 제거 (name 정규화 + startDate 기준)
+  const uniqueGroupCandidates: RawCandidate[] = [];
+  let groupDuplicatesCount = 0;
+
+  for (const cand of rawCandidates) {
+    const normName = cand.name.toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
+    const isDup = uniqueGroupCandidates.some((existing) => {
+      const existingNorm = existing.name.toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
+      const sameName =
+        normName === existingNorm ||
+        (normName.length >= 4 &&
+          existingNorm.length >= 4 &&
+          (normName.includes(existingNorm) || existingNorm.includes(normName)));
+      return sameName && existing.startDate === cand.startDate;
+    });
+
+    if (isDup) {
+      groupDuplicatesCount++;
+      dropped.push({
+        name: cand.name,
+        sourceUrl: cand.sourceUrl,
+        reason: 'duplicate',
+        detail: `그룹 간 중복 (동일/유사 이름 및 시작일 ${cand.startDate})`,
+      });
+    } else {
+      uniqueGroupCandidates.push(cand);
+    }
+  }
+
+  // ⑥ 종료(endDate < 오늘)이거나 startDate가 오늘+WINDOW_DAYS 이후인 항목 제거
   let endedCount = 0;
   const inRangeCandidates: RawCandidate[] = [];
 
-  for (const cand of rawCandidates) {
+  for (const cand of uniqueGroupCandidates) {
     if (cand.endDate && cand.endDate < todayKst) {
       endedCount++;
       dropped.push({
@@ -157,8 +193,34 @@ export async function runCollector(options: RunCollectorOptions = {}) {
     inRangeCandidates.push(cand);
   }
 
-  // ⑥ 5개씩 동시 처리로 verifyCandidate 실행
-  // sourceUrl 정규화(리다이렉트 추적) 및 mismatch/unresolved_redirect 처리
+  // ⑦ 기존 DB 대상(popups, submissions) 중복 제거 (dedupe)
+  const existingTargets = await getExistingTargets(todayDateObj);
+  let dbDuplicatesCount = 0;
+  const dedupedCandidates: RawCandidate[] = [];
+
+  for (const cand of inRangeCandidates) {
+    if (isDuplicate(cand, existingTargets)) {
+      dbDuplicatesCount++;
+      dropped.push({
+        name: cand.name,
+        sourceUrl: cand.sourceUrl,
+        reason: 'duplicate',
+        detail: '기존 팝업 또는 제보와 중복',
+      });
+    } else {
+      dedupedCandidates.push(cand);
+      existingTargets.push({
+        name: cand.name,
+        startDate: cand.startDate ? new Date(cand.startDate) : null,
+        sourceUrl: cand.sourceUrl,
+      });
+    }
+  }
+
+  // ⑧ MAX_CANDIDATES(15건) 상한 슬라이스 적용
+  const cappedCandidates = dedupedCandidates.slice(0, MAX_CANDIDATES);
+
+  // ⑨ 출처 검증 (최대 15건에 대해 동시에 최대 5건씩 병렬 처리)
   let mismatchCount = 0;
   const verifiedList: Array<{
     candidate: RawCandidate;
@@ -166,8 +228,8 @@ export async function runCollector(options: RunCollectorOptions = {}) {
     effectiveUrl: string;
   }> = [];
 
-  for (let i = 0; i < inRangeCandidates.length; i += 5) {
-    const chunk = inRangeCandidates.slice(i, i + 5);
+  for (let i = 0; i < cappedCandidates.length; i += 5) {
+    const chunk = cappedCandidates.slice(i, i + 5);
     const results = await Promise.all(chunk.map((cand) => verifyCandidate(cand)));
 
     for (let j = 0; j < chunk.length; j++) {
@@ -200,7 +262,7 @@ export async function runCollector(options: RunCollectorOptions = {}) {
         continue; // 폐기
       }
 
-      // 유효한 최종 URL 결정: vertexaisearch면 finalUrl로 교체, 일반 URL이면 finalUrl 또는 원본 sourceUrl
+      // 유효한 최종 URL 결정
       const effectiveUrl = (isVertex ? res.finalUrl : (res.finalUrl || cand.sourceUrl))!;
 
       verifiedList.push({
@@ -211,52 +273,21 @@ export async function runCollector(options: RunCollectorOptions = {}) {
     }
   }
 
-  // ⑦ 중복 제거 (dedupe): finalUrl (effectiveUrl) 기준으로 비교
-  const existingTargets = await getExistingTargets(todayDateObj);
-  let duplicatesCount = 0;
-  const nonDuplicateCandidates: Array<{
-    candidate: RawCandidate;
-    result: VerificationResult;
-    effectiveUrl: string;
-  }> = [];
-
-  for (const item of verifiedList) {
-    if (isDuplicate(item.candidate, existingTargets, item.effectiveUrl)) {
-      duplicatesCount++;
-      dropped.push({
-        name: item.candidate.name,
-        sourceUrl: item.candidate.sourceUrl,
-        reason: 'duplicate',
-        detail: `기존 팝업 또는 제보와 중복 (비교 URL: ${item.effectiveUrl})`,
-      });
-    } else {
-      nonDuplicateCandidates.push(item);
-      // 이후 후보들과의 상호 중복 방지를 위해 targets에 추가
-      existingTargets.push({
-        name: item.candidate.name,
-        startDate: item.candidate.startDate ? new Date(item.candidate.startDate) : null,
-        sourceUrl: item.effectiveUrl,
-      });
-    }
-  }
-
-  // 통계 계산
+  // ⑩ 통계 계산
   let verifiedCount = 0;
   let nameOnlyCount = 0;
   let unreadableCount = 0;
 
-  for (const item of nonDuplicateCandidates) {
+  for (const item of verifiedList) {
     if (item.result.level === 'verified') verifiedCount++;
     else if (item.result.level === 'name_only') nameOnlyCount++;
     else if (item.result.level === 'unreadable') unreadableCount++;
   }
 
-  // ⑧ 남은 후보를 MAX_CANDIDATES까지만 사용
-  const finalCandidates = nonDuplicateCandidates.slice(0, MAX_CANDIDATES);
+  // ⑪ DB 삽입 (dryRun이 아닌 경우)
   let insertedCount = 0;
-
   if (!dryRun) {
-    for (const item of finalCandidates) {
+    for (const item of verifiedList) {
       const { candidate, result, effectiveUrl } = item;
       await prisma.submission.create({
         data: {
@@ -285,16 +316,21 @@ export async function runCollector(options: RunCollectorOptions = {}) {
     }
   }
 
-  // ⑨ 요약 반환
+  // ⑫ 요약 및 응답 반환
+  const elapsedMs = Date.now() - startTime;
+  const timeBudgetWarning = elapsedMs > 45000;
+
   const baseSummary = {
     model: GEMINI_MODEL,
     dryRun,
     grounded,
     retried,
+    elapsedMs,
+    timeBudgetWarning,
     parsed: rawCandidates.length + invalidCount,
     invalid: invalidCount,
     ended: endedCount,
-    duplicates: duplicatesCount,
+    duplicates: groupDuplicatesCount + dbDuplicatesCount,
     mismatch: mismatchCount,
     verified: verifiedCount,
     name_only: nameOnlyCount,
@@ -305,9 +341,9 @@ export async function runCollector(options: RunCollectorOptions = {}) {
   if (dryRun) {
     return {
       ...baseSummary,
-      attempts,
+      perCall,
       llm: llmDiag,
-      candidates: finalCandidates.map((c) => ({
+      candidates: verifiedList.map((c) => ({
         name: c.candidate.name,
         brand: c.candidate.brandName,
         category: c.candidate.category,
@@ -326,7 +362,7 @@ export async function runCollector(options: RunCollectorOptions = {}) {
 
   return {
     ...baseSummary,
-    candidates: finalCandidates.map((c) => ({
+    candidates: verifiedList.map((c) => ({
       name: c.candidate.name,
       sourceUrl: c.effectiveUrl,
       verification: c.result.level,

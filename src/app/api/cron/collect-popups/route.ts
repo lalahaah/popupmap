@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { runCollector } from '@/lib/collector/run';
 
 export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
 export const maxDuration = 60;
 
 export async function GET(req: Request) {
