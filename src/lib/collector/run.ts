@@ -95,10 +95,26 @@ export async function runCollector(options: RunCollectorOptions = {}) {
   const existingNames = Array.from(existingNamesSet);
 
   // ④ collectRawCandidates 호출
-  const { items: rawCandidates, invalidCount, invalidItems, llm: llmDiag } = await collectRawCandidates({
+  const {
+    items: rawCandidates,
+    invalidCount,
+    invalidItems,
+    llm: llmDiag,
+    grounded,
+    retried,
+  } = await collectRawCandidates({
     todayKst,
     existingNames,
   });
+
+  if (!grounded) {
+    return {
+      skipped: 'no_grounding',
+      retried,
+      grounded,
+      llm: llmDiag,
+    };
+  }
 
   if (invalidItems) {
     for (const inv of invalidItems) {
@@ -271,6 +287,8 @@ export async function runCollector(options: RunCollectorOptions = {}) {
   const baseSummary = {
     model: GEMINI_MODEL,
     dryRun,
+    grounded,
+    retried,
     parsed: rawCandidates.length + invalidCount,
     invalid: invalidCount,
     ended: endedCount,

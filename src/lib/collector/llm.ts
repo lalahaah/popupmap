@@ -30,6 +30,8 @@ export interface CollectRawCandidatesResult {
   invalidCount: number;
   invalidItems?: Array<{ name: string; sourceUrl: string; detail: string }>;
   llm: LlmDiagInfo;
+  grounded: boolean;
+  retried: boolean;
 }
 
 const candidateSchema = z.object({
@@ -55,7 +57,33 @@ export async function collectRawCandidates({
     throw new Error('GEMINI_API_KEY environment variable is missing');
   }
 
-  const prompt = `오늘 날짜: ${todayKst} (한국 시간)
+  // {월}, {다음달} 계산
+  const [yearStr, monthStr] = todayKst.split('-');
+  const currentYear = parseInt(yearStr, 10);
+  const currentMonth = parseInt(monthStr, 10);
+  const currentMonthLabel = `${currentYear}년 ${currentMonth}월`;
+
+  let nextYear = currentYear;
+  let nextMonth = currentMonth + 1;
+  if (nextMonth > 12) {
+    nextYear += 1;
+    nextMonth = 1;
+  }
+  const nextMonthLabel = `${nextYear}년 ${nextMonth}월`;
+
+  const basePrompt = `오늘 날짜: ${todayKst} (한국 시간)
+
+[필수 절차]
+답하기 전에 반드시 Google 검색 도구로 아래 검색을 각각 수행한다.
+검색을 수행하지 않고 기억만으로 답하지 않는다. 검색 결과에서 확인되지 않은 팝업은 쓰지 않는다.
+검색어:
+- ${currentMonthLabel} 성수 팝업스토어
+- ${currentMonthLabel} 더현대 서울 팝업스토어
+- ${currentMonthLabel} 홍대 팝업스토어
+- ${currentMonthLabel} 한남 용산 팝업스토어
+- ${currentMonthLabel} 강남 잠실 팝업스토어
+- 팝가 ${currentMonthLabel} 팝업 오픈 예정
+- ${nextMonthLabel} 서울 팝업스토어 오픈 예정
 
 너는 한국 팝업스토어 정보를 조사하는 리서처다. Google 검색을 사용해서, 지금 진행 중이거나 앞으로 ${WINDOW_DAYS}일 안에 시작하는 팝업스토어를 찾아라.
 
@@ -77,39 +105,56 @@ ${existingNames.length > 0 ? existingNames.join('\n') : '(등록된 팝업 없�
 출력: 설명 없이 JSON 배열만 출력한다. 각 원소 형식:
 {"name": string, "brandName": string|null, "category": "FASHION"|"BEAUTY"|"FOOD"|"GOODS"|"EXHIBIT"|"ETC", "address": string, "startDate": "YYYY-MM-DD", "endDate": "YYYY-MM-DD"|null, "description": string (한국어 1~2문장, 광고 문구 제외), "sourceUrl": string}`;
 
-  let rawText = '';
-  const groundingDomains: string[] = [];
-  const webSearchQueries: string[] = [];
-  let groundingChunkCount = 0;
+  const ai = new GoogleGenAI({ apiKey });
 
-  try {
-    const ai = new GoogleGenAI({ apiKey });
+  const executeCall = async (contentPrompt: string) => {
     const response = await ai.models.generateContent({
       model: GEMINI_MODEL,
-      contents: prompt,
+      contents: contentPrompt,
       config: {
         tools: [{ googleSearch: {} }],
         temperature: 0.2,
       },
     });
 
-    rawText = response.text || '';
-
+    const raw = response.text || '';
     const metadata = response.candidates?.[0]?.groundingMetadata;
-    if (metadata?.webSearchQueries) {
-      webSearchQueries.push(...metadata.webSearchQueries);
-    }
-    const chunks = metadata?.groundingChunks;
+    const queries = metadata?.webSearchQueries || [];
+    const chunks = metadata?.groundingChunks || [];
+    const domains: string[] = [];
+
     if (Array.isArray(chunks)) {
-      groundingChunkCount = chunks.length;
       for (const chunk of chunks) {
         if (chunk.web?.title) {
-          groundingDomains.push(chunk.web.title);
+          domains.push(chunk.web.title);
         }
       }
     }
+
+    const isGrounded = queries.length > 0 || (Array.isArray(chunks) && chunks.length > 0);
+
+    return {
+      rawText: raw,
+      webSearchQueries: queries,
+      groundingChunkCount: Array.isArray(chunks) ? chunks.length : 0,
+      groundingDomains: domains,
+      grounded: isGrounded,
+    };
+  };
+
+  let callResult: Awaited<ReturnType<typeof executeCall>>;
+  let retried = false;
+
+  try {
+    callResult = await executeCall(basePrompt);
+
+    // grounded 가드: 검색이 수행되지 않았으면 1회 재시도
+    if (!callResult.grounded) {
+      retried = true;
+      const retryPrompt = `${basePrompt}\n\n[재시도] 직전 응답은 검색 없이 작성되어 폐기되었다. 반드시 Google 검색을 수행한 뒤 다시 답하라.`;
+      callResult = await executeCall(retryPrompt);
+    }
   } catch (error: any) {
-    // API 키 노출 방지
     let safeMessage = error?.message || 'Unknown error during Gemini call';
     if (apiKey) {
       safeMessage = safeMessage.replaceAll(apiKey, '[REDACTED]');
@@ -118,16 +163,31 @@ ${existingNames.length > 0 ? existingNames.join('\n') : '(등록된 팝업 없�
   }
 
   const makeLlmDiag = (parseFailed: boolean): LlmDiagInfo => ({
-    rawTextLength: rawText.length,
+    rawTextLength: callResult.rawText.length,
     parseFailed,
-    rawTextHead: rawText.slice(0, 3000),
-    webSearchQueries,
-    groundingChunkCount,
-    groundingDomains,
+    rawTextHead: callResult.rawText.slice(0, 3000),
+    webSearchQueries: callResult.webSearchQueries,
+    groundingChunkCount: callResult.groundingChunkCount,
+    groundingDomains: callResult.groundingDomains,
   });
 
+  // 재시도 후에도 grounded가 false이면 모든 후보 폐기
+  if (!callResult.grounded) {
+    return {
+      items: [],
+      groundingDomains: callResult.groundingDomains,
+      rawText: callResult.rawText,
+      parseError: false,
+      invalidCount: 0,
+      invalidItems: [],
+      llm: makeLlmDiag(false),
+      grounded: false,
+      retried,
+    };
+  }
+
   // 응답 파싱
-  let cleanText = rawText.trim();
+  let cleanText = callResult.rawText.trim();
   if (cleanText.includes('```')) {
     cleanText = cleanText.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim();
   }
@@ -138,11 +198,13 @@ ${existingNames.length > 0 ? existingNames.join('\n') : '(등록된 팝업 없�
   if (firstBracket === -1 || lastBracket === -1 || firstBracket >= lastBracket) {
     return {
       items: [],
-      groundingDomains,
-      rawText,
+      groundingDomains: callResult.groundingDomains,
+      rawText: callResult.rawText,
       parseError: true,
       invalidCount: 0,
       llm: makeLlmDiag(true),
+      grounded: true,
+      retried,
     };
   }
 
@@ -153,21 +215,25 @@ ${existingNames.length > 0 ? existingNames.join('\n') : '(등록된 팝업 없�
     if (!Array.isArray(parsedArray)) {
       return {
         items: [],
-        groundingDomains,
-        rawText,
+        groundingDomains: callResult.groundingDomains,
+        rawText: callResult.rawText,
         parseError: true,
         invalidCount: 0,
         llm: makeLlmDiag(true),
+        grounded: true,
+        retried,
       };
     }
   } catch {
     return {
       items: [],
-      groundingDomains,
-      rawText,
+      groundingDomains: callResult.groundingDomains,
+      rawText: callResult.rawText,
       parseError: true,
       invalidCount: 0,
       llm: makeLlmDiag(true),
+      grounded: true,
+      retried,
     };
   }
 
@@ -194,11 +260,13 @@ ${existingNames.length > 0 ? existingNames.join('\n') : '(등록된 팝업 없�
 
   return {
     items,
-    groundingDomains,
-    rawText,
+    groundingDomains: callResult.groundingDomains,
+    rawText: callResult.rawText,
     parseError: false,
     invalidCount,
     invalidItems,
     llm: makeLlmDiag(false),
+    grounded: true,
+    retried,
   };
 }
