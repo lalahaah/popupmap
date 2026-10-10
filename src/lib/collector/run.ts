@@ -12,7 +12,7 @@ import {
   isVertexAiHost,
   isGoogleHost,
 } from './verify';
-import { getExistingTargets, isDuplicate } from './dedupe';
+import { getExistingTargets, isDuplicate, isDuplicatePair } from './dedupe';
 
 function getTodayKst(): { dateStr: string; dateObj: Date; maxStartDateStr: string } {
   const formatter = new Intl.DateTimeFormat('en-CA', {
@@ -136,21 +136,12 @@ export async function runCollector(options: RunCollectorOptions = {}) {
     }
   }
 
-  // ⑤ 그룹 간 중복 제거 (name 정규화 + startDate 기준)
+  // ⑤ 그룹 간 중복 제거 (강화된 중복 판정 규칙 동일 적용)
   const uniqueGroupCandidates: RawCandidate[] = [];
   let groupDuplicatesCount = 0;
 
   for (const cand of rawCandidates) {
-    const normName = cand.name.toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
-    const isDup = uniqueGroupCandidates.some((existing) => {
-      const existingNorm = existing.name.toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
-      const sameName =
-        normName === existingNorm ||
-        (normName.length >= 4 &&
-          existingNorm.length >= 4 &&
-          (normName.includes(existingNorm) || existingNorm.includes(normName)));
-      return sameName && existing.startDate === cand.startDate;
-    });
+    const isDup = uniqueGroupCandidates.some((existing) => isDuplicatePair(cand, existing));
 
     if (isDup) {
       groupDuplicatesCount++;
@@ -158,7 +149,7 @@ export async function runCollector(options: RunCollectorOptions = {}) {
         name: cand.name,
         sourceUrl: cand.sourceUrl,
         reason: 'duplicate',
-        detail: `그룹 간 중복 (동일/유사 이름 및 시작일 ${cand.startDate})`,
+        detail: `그룹 간 중복`,
       });
     } else {
       uniqueGroupCandidates.push(cand);
@@ -211,7 +202,10 @@ export async function runCollector(options: RunCollectorOptions = {}) {
       dedupedCandidates.push(cand);
       existingTargets.push({
         name: cand.name,
+        brandName: cand.brandName,
         startDate: cand.startDate ? new Date(cand.startDate) : null,
+        endDate: cand.endDate ? new Date(cand.endDate) : null,
+        address: cand.address,
         sourceUrl: cand.sourceUrl,
       });
     }

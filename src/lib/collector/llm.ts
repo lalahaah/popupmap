@@ -16,6 +16,7 @@ export interface RawCandidate {
 export interface GroupCallResult {
   group: string;
   ok: boolean;
+  retried: boolean;
   parsed: number;
   redirectUrlCount: number;
   elapsedMs: number;
@@ -25,7 +26,7 @@ export interface GroupCallResult {
 export interface LlmDiagInfo {
   rawTextLength: number;
   parseFailed: boolean;
-  rawTextHead: string; // 최대 8000자
+  rawTextHead: string; // 그룹당 최대 1500자
   webSearchQueries: string[];
   groundingChunkCount: number;
   groundingDomains: string[];
@@ -37,7 +38,7 @@ export interface CollectRawCandidatesResult {
   invalidCount: number;
   invalidItems: Array<{ name: string; sourceUrl: string; detail: string }>;
   grounded: boolean;
-  retried: boolean; // 재시도 없음
+  retried: boolean;
   perCall: GroupCallResult[];
   llm: LlmDiagInfo;
 }
@@ -110,10 +111,10 @@ export async function collectRawCandidates({
 
   const ai = new GoogleGenAI({ apiKey });
 
-  const executeGroupCall = async (groupKey: string, searchTerms: string[]) => {
+  const executeGroupCall = async (groupKey: string, searchTerms: string[], isRetry: boolean = false) => {
     const callStart = Date.now();
 
-    const prompt = `오늘 날짜: ${todayKst} (한국 시간)
+    let prompt = `오늘 날짜: ${todayKst} (한국 시간)
 
 [필수 절차]
 답하기 전에 반드시 Google 검색 도구로 아래 검색을 각각 수행한다.
@@ -143,6 +144,10 @@ ${existingNames.length > 0 ? existingNames.join('\n') : '(등록된 팝업 없�
 출력: 설명 없이 JSON 배열만 출력한다. 각 원소 형식:
 {"name": string, "brandName": string|null, "category": "FASHION"|"BEAUTY"|"FOOD"|"GOODS"|"EXHIBIT"|"ETC", "address": string, "startDate": "YYYY-MM-DD", "endDate": "YYYY-MM-DD"|null, "description": string (한국어 1~2문장, 광고 문구 제외), "sourceUrl": string}`;
 
+    if (isRetry) {
+      prompt += '\n\n[재시도] 직전 응답은 검색 없이 작성되어 폐기되었다. 반드시 Google 검색을 수행한 뒤 다시 답하라.';
+    }
+
     const apiCallPromise = ai.models.generateContent({
       model: GEMINI_MODEL,
       contents: prompt,
@@ -152,7 +157,11 @@ ${existingNames.length > 0 ? existingNames.join('\n') : '(등록된 팝업 없�
       },
     });
 
-    const response = await withTimeout(apiCallPromise, TIMEOUT_MS, `그룹 ${groupKey} 호출이 25초를 초과하여 타임아웃되었습니다.`);
+    const response = await withTimeout(
+      apiCallPromise,
+      TIMEOUT_MS,
+      `그룹 ${groupKey}${isRetry ? ' 재시도' : ''} 호출이 25초를 초과하여 타임아웃되었습니다.`
+    );
     const callElapsed = Date.now() - callStart;
 
     const raw = response.text || '';
@@ -240,11 +249,26 @@ ${existingNames.length > 0 ? existingNames.join('\n') : '(등록된 팝업 없�
     };
   };
 
-  // Promise.allSettled 병렬 실행
+  // 1차 병렬 실행
   const groupKeys = Object.keys(groups);
-  const settledResults = await Promise.allSettled(
-    groupKeys.map((k) => executeGroupCall(k, groups[k]))
+  const round1Settled = await Promise.allSettled(
+    groupKeys.map((k) => executeGroupCall(k, groups[k], false))
   );
+
+  // no_grounding 실패 그룹 추출 및 재시도
+  const retryGroupKeys = groupKeys.filter((_, idx) => {
+    const res = round1Settled[idx];
+    return res.status === 'fulfilled' && !res.value.ok;
+  });
+
+  const retrySettled = await Promise.allSettled(
+    retryGroupKeys.map((k) => executeGroupCall(k, groups[k], true))
+  );
+
+  const retryMap = new Map<string, PromiseSettledResult<any>>();
+  retryGroupKeys.forEach((k, idx) => {
+    retryMap.set(k, retrySettled[idx]);
+  });
 
   const perCall: GroupCallResult[] = [];
   const allItems: RawCandidate[] = [];
@@ -253,19 +277,28 @@ ${existingNames.length > 0 ? existingNames.join('\n') : '(등록된 팝업 없�
   const allDomains = new Set<string>();
   const allQueries = new Set<string>();
   const rawTextParts: string[] = [];
+  let anyRetried = false;
 
   for (let i = 0; i < groupKeys.length; i++) {
     const key = groupKeys[i];
-    const res = settledResults[i];
+    const r1 = round1Settled[i];
+    const hasRetried = retryMap.has(key);
+    if (hasRetried) anyRetried = true;
 
-    if (res.status === 'fulfilled') {
-      const val = res.value;
+    const finalRes = hasRetried ? retryMap.get(key)! : r1;
+    const r1Elapsed = r1.status === 'fulfilled' ? r1.value.elapsedMs : TIMEOUT_MS;
+
+    if (finalRes.status === 'fulfilled') {
+      const val = finalRes.value;
+      const totalElapsed = hasRetried ? r1Elapsed + val.elapsedMs : val.elapsedMs;
+
       perCall.push({
         group: val.group,
         ok: val.ok,
+        retried: hasRetried,
         parsed: val.parsed,
         redirectUrlCount: val.redirectUrlCount,
-        elapsedMs: val.elapsedMs,
+        elapsedMs: totalElapsed,
         error: val.error,
       });
 
@@ -273,24 +306,27 @@ ${existingNames.length > 0 ? existingNames.join('\n') : '(등록된 팝업 없�
         allItems.push(...val.items);
         allInvalidItems.push(...val.invalidItems);
         totalInvalidCount += val.invalidCount;
-        val.domains.forEach((d) => allDomains.add(d));
-        val.queries.forEach((q) => allQueries.add(q));
+        val.domains.forEach((d: string) => allDomains.add(d));
+        val.queries.forEach((q: string) => allQueries.add(q));
       }
-      rawTextParts.push(`--- 그룹 ${key} (${val.ok ? 'OK' : 'FAIL'}) ---\n${val.rawText}`);
+      // rawTextHead는 그룹당 최대 1500자로 축소
+      const trimmedText = val.rawText.length > 1500 ? val.rawText.slice(0, 1500) + '...(중략)' : val.rawText;
+      rawTextParts.push(`--- 그룹 ${key} (${val.ok ? 'OK' : 'FAIL'}${hasRetried ? ', RETRIED' : ''}) ---\n${trimmedText}`);
     } else {
-      let safeMsg = res.reason?.message || 'Unknown group call error';
+      let safeMsg = finalRes.reason?.message || 'Unknown group call error';
       if (apiKey) {
         safeMsg = safeMsg.replaceAll(apiKey, '[REDACTED]');
       }
       perCall.push({
         group: key,
         ok: false,
+        retried: hasRetried,
         parsed: 0,
         redirectUrlCount: 0,
-        elapsedMs: TIMEOUT_MS,
+        elapsedMs: hasRetried ? r1Elapsed + TIMEOUT_MS : TIMEOUT_MS,
         error: safeMsg,
       });
-      rawTextParts.push(`--- 그룹 ${key} (ERROR) ---\n${safeMsg}`);
+      rawTextParts.push(`--- 그룹 ${key} (ERROR${hasRetried ? ', RETRIED' : ''}) ---\n${safeMsg}`);
     }
   }
 
@@ -303,12 +339,12 @@ ${existingNames.length > 0 ? existingNames.join('\n') : '(등록된 팝업 없�
     invalidCount: totalInvalidCount,
     invalidItems: allInvalidItems,
     grounded,
-    retried: false,
+    retried: anyRetried,
     perCall,
     llm: {
       rawTextLength: combinedRawText.length,
       parseFailed: !grounded && allItems.length === 0,
-      rawTextHead: combinedRawText.slice(0, 8000),
+      rawTextHead: combinedRawText, // 이미 각 그룹당 1500자로 최적화됨
       webSearchQueries: Array.from(allQueries),
       groundingChunkCount: allDomains.size,
       groundingDomains: Array.from(allDomains),
